@@ -229,7 +229,7 @@
   </div>
 
   <canvas id="canvas" style="display:none;"></canvas>
-    <script>
+  <script>
     const video = document.getElementById('video');
     const canvas = document.getElementById('canvas');
     const startBox = document.getElementById('startBox');
@@ -254,11 +254,10 @@
     let capturedPhotos = [];
     let selectedPhotoIndex = 0;
 
-    // 1. Buka Kamera Langsung
     async function startCamera() {
       errorMsg.textContent = '';
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-        errorMsg.textContent = 'Browser tidak mendukung akses kamera. Pastikan dibuka lewat HTTPS.';
+        errorMsg.textContent = 'Browser tidak mendukung kamera. Pastikan menggunakan Chrome terbaru.';
         return;
       }
 
@@ -268,7 +267,7 @@
 
       const facing = useFrontCam ? 'user' : 'environment';
       const constraintsList = [
-        { video: { facingMode: { exact: facing }, width: { ideal: 1920 }, height: { ideal: 1080 } }, audio: false },
+        { video: { facingMode: facing, width: { ideal: 1920 }, height: { ideal: 1080 } }, audio: false },
         { video: { facingMode: facing }, audio: false },
         { video: true, audio: false }
       ];
@@ -284,7 +283,7 @@
       }
 
       if (!stream) {
-        errorMsg.textContent = `Gagal membuka kamera (${lastErr ? lastErr.name : 'Error'}). Cek izin kamera di pengaturan situs Chrome.`;
+        errorMsg.textContent = `Kamera gagal dibuka (${lastErr ? lastErr.name : 'Error'}). Aktifkan izin Kamera di Pengaturan HP > Aplikasi > Chrome.`;
         return;
       }
 
@@ -293,7 +292,7 @@
 
       startBox.style.display = 'none';
       const track = stream.getVideoTracks()[0];
-      const settings = track.getSettings ? track.getSettings() : {};
+      const settings = track && track.getSettings ? track.getSettings() : {};
       const w = settings.width || video.videoWidth || 1280;
       const h = settings.height || video.videoHeight || 720;
       const fps = settings.frameRate ? Math.round(settings.frameRate) : 30;
@@ -308,7 +307,6 @@
       startCamera();
     });
 
-    // Grid & Torch
     gridBtn.addEventListener('click', () => {
       gridOverlay.classList.toggle('hidden');
       const isOn = !gridOverlay.classList.contains('hidden');
@@ -319,18 +317,17 @@
     torchBtn.addEventListener('click', async () => {
       if (!stream) return;
       const track = stream.getVideoTracks()[0];
-      const caps = track.getCapabilities ? track.getCapabilities() : {};
+      const caps = track && track.getCapabilities ? track.getCapabilities() : {};
       if (caps.torch) {
         torchOn = !torchOn;
         await track.applyConstraints({ advanced: [{ torch: torchOn }] });
         torchBtn.textContent = `Torch: ${torchOn ? 'ON' : 'OFF'}`;
         torchBtn.classList.toggle('active', torchOn);
       } else {
-        alert('Perangkat ini tidak mendukung kontrol Torch/Flash lewat browser.');
+        alert('Perangkat ini tidak mendukung kontrol Torch lewat browser.');
       }
     });
 
-    // 2. Terapkan LUT + Kontrol Manual Pro
     function applyCameraEffects() {
       const brightnessVal = 1 + (manualState.ev * 0.25) + ((manualState.iso - 100) / 6000);
       const wbWarmth = (manualState.wb - 5500) / 10000;
@@ -345,7 +342,7 @@
 
       if (stream) {
         const track = stream.getVideoTracks()[0];
-        const caps = track.getCapabilities ? track.getCapabilities() : {};
+        const caps = track && track.getCapabilities ? track.getCapabilities() : {};
         const adv = {};
         if (caps.zoom) adv.zoom = Math.min(Math.max(manualState.zoom, caps.zoom.min), caps.zoom.max);
         if (caps.exposureCompensation) {
@@ -355,7 +352,6 @@
       }
     }
 
-    // Pilihan LUT
     function bindLutButtons() {
       document.querySelectorAll('.lut-btn').forEach(btn => {
         btn.onclick = () => {
@@ -369,7 +365,6 @@
     }
     bindLutButtons();
 
-    // Import .CUBE
     document.getElementById('cubeInput').addEventListener('change', (e) => {
       const file = e.target.files[0];
       if (!file) return;
@@ -405,7 +400,6 @@
       reader.readAsText(file);
     });
 
-    // AI Auto-LUT
     document.getElementById('aiAutoLutBtn').addEventListener('click', () => {
       aiStatus.textContent = 'AI: Menganalisis Scene...';
       setTimeout(() => {
@@ -416,7 +410,6 @@
       }, 600);
     });
 
-    // Salin Preset
     document.getElementById('copyPresetBtn').addEventListener('click', () => {
       const presetText = `Pro AI Camera Preset | LUT: ${activeLutName.textContent} | EV: ${manualState.ev} | ISO: ${manualState.iso} | Shutter: 1/${manualState.shutter} | WB: ${manualState.wb}K | Zoom: ${manualState.zoom}x`;
       navigator.clipboard.writeText(presetText).then(() => {
@@ -424,7 +417,6 @@
       });
     });
 
-    // Tab Kontrol Manual Pro
     const slider = document.getElementById('manualSlider');
     const sliderValueText = document.getElementById('sliderValueText');
     const paramConfigs = {
@@ -460,4 +452,9 @@
     document.getElementById('resetManualBtn').addEventListener('click', () => {
       manualState.ev = 0; manualState.iso = 100; manualState.shutter = 60; manualState.wb = 5500; manualState.zoom = 1.0;
       document.getElementById('lbl-ev').textContent = '0.0';
-      
+      document.getElementById('lbl-iso').textContent = 'AUTO';
+      document.getElementById('lbl-shutter').textContent = '1/60';
+      document.getElementById('lbl-wb').textContent = '5500K';
+      document.getElementById('lbl-zoom').textContent = '1.0x';
+      slider.value = manualState[activeParam];
+    
