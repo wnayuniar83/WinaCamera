@@ -12,7 +12,6 @@
     video { width: 100%; height: 100%; object-fit: cover; transition: filter 0.15s ease; }
     canvas { display: none; }
 
-    /* Overlay Mulai */
     #overlay {
       position: absolute; inset: 0; z-index: 60; background: rgba(0,0,0,0.9);
       display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 15px; padding: 20px; text-align: center;
@@ -23,7 +22,6 @@
     }
     #status-txt { color: #ffd166; font-size: 13px; max-width: 300px; }
 
-    /* HUD Atas */
     .hud-top {
       position: absolute; top: 10px; left: 10px; right: 10px; z-index: 25;
       display: flex; flex-direction: column; gap: 8px;
@@ -41,7 +39,6 @@
     .btn-hdr.active { background: #ff9f1c; border-color: #ff9f1c; color: #000; }
     .btn-biru { background: #00a8ff; border: none; color: #fff; border-radius: 5px; padding: 4px 8px; font-size: 11px; font-weight: bold; cursor: pointer; }
 
-    /* Grid & Timer */
     .grid {
       position: absolute; inset: 0; pointer-events: none; z-index: 10;
       background-image: linear-gradient(to right, rgba(255,255,255,0.25) 1px, transparent 1px),
@@ -57,12 +54,10 @@
       position: absolute; inset: 0; background: #fff; z-index: 55; opacity: 0; pointer-events: none; transition: opacity 0.15s;
     }
 
-    /* Panel Drawer (Manual Pro & Pengaturan) */
     .panel-box {
       position: absolute; bottom: 155px; left: 12px; right: 12px; z-index: 40;
       background: rgba(18, 18, 18, 0.92); border: 1px solid rgba(255,255,255,0.25);
       border-radius: 14px; padding: 14px; display: none; flex-direction: column; gap: 10px;
-      backdrop-filter: blur(8px);
     }
     .panel-title { font-size: 12px; font-weight: bold; color: #00a8ff; display: flex; justify-content: space-between; }
     .slider-row { display: flex; flex-direction: column; gap: 4px; font-size: 11px; }
@@ -75,7 +70,6 @@
     }
     .opt-btn.active { background: #00a8ff; border-color: #00a8ff; font-weight: bold; }
 
-    /* Kontrol Bawah */
     .bawah {
       position: absolute; bottom: 0; left: 0; right: 0; z-index: 30;
       background: linear-gradient(transparent, rgba(0,0,0,0.96));
@@ -92,7 +86,7 @@
     .shutter-row { display: flex; justify-content: space-between; align-items: center; padding: 0 6px; }
     .shutter {
       width: 66px; height: 66px; border-radius: 50%; background: #fff;
-      border: 4px solid #888; cursor: pointer; transition: transform 0.1s;
+      border: 4px solid #888; cursor: pointer;
     }
     .shutter:active { transform: scale(0.92); }
     .side-btn {
@@ -113,10 +107,9 @@
 
     <div id="overlay">
       <button class="btn-mulai" onclick="bukaKamera()">Ketuk untuk Aktifkan Kamera</button>
-      <div id="status-txt">Siap menyalakan kamera...</div>
+      <div id="status-txt">Tekan tombol biru di atas</div>
     </div>
 
-    <!-- HUD Atas -->
     <div class="hud-top">
       <div class="hud-row">
         <div class="badge" id="info-res">RES: HD | LIVE</div>
@@ -131,11 +124,10 @@
           <span id="info-lut">LUT: ASLI</span>
           <button class="btn-biru" onclick="salinInfo()">Salin Preset</button>
         </div>
-        <button class="btn-top" id="btn-set" onclick="togglePanel('panel-set')">⚙️ Setelan</button>
+        <button class="btn-top" id="btn-set" onclick="togglePanel('panel-set')">Setelan</button>
       </div>
     </div>
 
-    <!-- Panel Manual Kamera Pro -->
     <div class="panel-box" id="panel-pro">
       <div class="panel-title">
         <span>MANUAL KAMERA PRO</span>
@@ -159,27 +151,25 @@
       </div>
     </div>
 
-    <!-- Panel Pengaturan Kamera -->
     <div class="panel-box" id="panel-set">
       <div class="panel-title">
         <span>PENGATURAN KAMERA</span>
-        <span style="color:#ff6b6b; cursor:pointer;" onclick="togglePanel('panel-set')">Tutup ✕</span>
+        <span style="color:#ff6b6b; cursor:pointer;" onclick="togglePanel('panel-set')">Tutup X</span>
       </div>
       <div style="font-size:11px; color:#aaa;">Resolusi Video & Foto:</div>
       <div class="opt-grid">
         <button class="opt-btn active" id="res-hd" onclick="setResolusi('hd')">HD (720p)</button>
         <button class="opt-btn" id="res-fhd" onclick="setResolusi('fhd')">Full HD (1080p)</button>
       </div>
-      <div style="font-size:11px; color:#aaa; margin-top:4px;">Timer Jepret & Tampilan:</div>
+      <div style="font-size:11px; color:#aaa; margin-top:4px;">Timer & Tampilan:</div>
       <div class="opt-grid">
         <button class="opt-btn" id="btn-timer" onclick="gantiTimer()">Timer: OFF</button>
         <button class="opt-btn active" id="btn-grid" onclick="toggleGrid()">Grid 3x3: ON</button>
         <button class="opt-btn" id="btn-mirror" onclick="toggleMirror()">Mirror: OFF</button>
-        <button class="opt-btn" onclick="instalPWA()">📲 Instal Aplikasi</button>
+        <button class="opt-btn" onclick="simpanOffline()">Simpan Offline</button>
       </div>
     </div>
 
-    <!-- Kontrol Bawah -->
     <div class="bawah">
       <div class="lut-bar">
         <button class="lut-btn active" onclick="pilihFilter(this, 'ASLI', '')">Asli</button>
@@ -189,3 +179,16 @@
         <button class="lut-btn" onclick="pilihFilter(this, 'TEAL ORANGE', 'contrast(1.18) saturate(1.3) hue-rotate(-10deg)')">Teal & Orange</button>
         <button class="lut-btn" onclick="pilihFilter(this, 'CYBERPUNK', 'contrast(1.25) saturate(1.5) hue-rotate(25deg)')">Cyberpunk</button>
         <button class="lut-btn" onclick="pilihFilter(this, 'B&W NOIR', 'grayscale(1) contrast(1.35)')">B&W Noir</button>
+      </div>
+
+      <div class="shutter-row">
+        <button class="side-btn" id="btn-pro" onclick="togglePanel('panel-pro')">Manual Pro</button>
+        <button class="shutter" onclick="klikShutter()"></button>
+        <label class="side-btn" style="cursor:pointer;">
+          Import LUT <input type="file" accept=".cube" style="display:none;" onchange="importCube(this)">
+        </label>
+      </div>
+    </div>
+  </div>
+
+  <script>
