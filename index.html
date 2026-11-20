@@ -6,24 +6,26 @@
   <title>Pro AI Camera + LUT & Manual Controls</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, sans-serif; }
-    body { background: #0d0d0d; color: #fff; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+    body {
+      background: #0d0d0d; color: #fff; display: flex; flex-direction: column;
+      height: 100vh; height: 100dvh; overflow: hidden;
+    }
 
     /* Header Info */
     .top-bar {
       display: flex; justify-content: space-between; align-items: center; gap: 6px;
       padding: 8px 12px; background: rgba(0, 0, 0, 0.85); font-size: 11px; z-index: 10;
-      border-bottom: 1px solid #222;
+      border-bottom: 1px solid #222; flex-shrink: 0;
     }
     .badge { background: #1e1e1e; padding: 4px 8px; border-radius: 6px; border: 1px solid #333; white-space: nowrap; }
     .ai-status { color: #00e676; font-weight: 600; font-size: 11px; text-align: center; }
 
     /* Viewport Kamera */
     .camera-container {
-      position: relative; flex: 1; background: #050505; display: flex;
+      position: relative; flex: 1; min-height: 0; background: #050505; display: flex;
       flex-direction: column; justify-content: center; align-items: center; overflow: hidden;
     }
-    video, #fallbackImage { width: 100%; height: 100%; object-fit: cover; transition: filter 0.2s ease; }
-    #fallbackImage { display: none; }
+    video { width: 100%; height: 100%; object-fit: cover; transition: filter 0.2s ease; }
 
     /* Grid Rule of Thirds */
     .grid-overlay {
@@ -40,19 +42,16 @@
       align-items: center; gap: 10px; padding: 20px; text-align: center; max-width: 90%;
     }
     .start-btn {
-      background: #ff9100; color: #000; border: none; padding: 14px 22px;
-      border-radius: 30px; font-weight: bold; font-size: 14px; cursor: pointer;
+      background: #ff9100; color: #000; border: none; padding: 14px 24px;
+      border-radius: 30px; font-weight: bold; font-size: 15px; cursor: pointer;
       box-shadow: 0 4px 15px rgba(255,145,0,0.4);
-    }
-    .alt-btn {
-      background: #222; color: #ddd; border: 1px solid #444; padding: 8px 14px;
-      border-radius: 20px; font-size: 12px; cursor: pointer;
     }
     .error-msg { color: #ff5252; font-size: 12px; margin-top: 6px; line-height: 1.4; }
 
     /* Panel Kontrol Bawah */
     .controls-wrapper {
-      background: #141414; padding: 8px 12px 16px; border-top: 1px solid #262626; z-index: 10;
+      background: #141414; padding: 8px 12px 14px; border-top: 1px solid #262626;
+      z-index: 10; flex-shrink: 0;
     }
     .lut-header {
       display: flex; justify-content: space-between; align-items: center;
@@ -75,7 +74,7 @@
 
     /* Panel Kamera Manual Pro */
     .manual-panel {
-      background: #1c1c1c; border-radius: 10px; padding: 8px 10px; margin-bottom: 10px;
+      background: #1c1c1c; border-radius: 10px; padding: 7px 10px; margin-bottom: 10px;
       border: 1px solid #2c2c2c;
     }
     .manual-tabs { display: flex; justify-content: space-between; gap: 4px; margin-bottom: 6px; }
@@ -101,7 +100,7 @@
       color: #fff; font-size: 9px; padding: 1px 4px; border-radius: 4px;
     }
     .shutter-btn {
-      width: 62px; height: 62px; border-radius: 50%; background: #fff;
+      width: 58px; height: 58px; border-radius: 50%; background: #fff;
       border: 4px solid #555; cursor: pointer; transition: transform 0.1s;
     }
     .shutter-btn:active { transform: scale(0.92); background: #ff9100; }
@@ -120,7 +119,7 @@
     .modal.open { display: flex; }
     .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
     .modal-body { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; overflow: hidden; }
-    .modal-body img { max-width: 100%; max-height: 62vh; border-radius: 8px; border: 1px solid #333; }
+    .modal-body img { max-width: 100%; max-height: 60vh; border-radius: 8px; border: 1px solid #333; }
     .thumb-strip { display: flex; gap: 8px; overflow-x: auto; padding: 10px 0; width: 100%; margin-top: 10px; }
     .thumb-strip img {
       width: 56px; height: 56px; object-fit: cover; border-radius: 6px;
@@ -147,12 +146,10 @@
   <div class="camera-container">
     <div class="start-box" id="startBox">
       <button class="start-btn" id="startCamBtn">📷 Ketuk untuk Aktifkan Kamera</button>
-      <button class="alt-btn" id="testImageBtn">🖼️ Mode Uji Coba (Tanpa Kamera)</button>
       <div class="error-msg" id="errorMsg"></div>
     </div>
 
     <video id="video" autoplay playsinline muted></video>
-    <img id="fallbackImage" alt="Mode Uji Coba" />
     <div class="grid-overlay" id="gridOverlay"></div>
   </div>
 
@@ -231,12 +228,9 @@
     </div>
   </div>
 
-  <!-- Canvas & Input File Tersembunyi -->
   <canvas id="canvas" style="display:none;"></canvas>
-  <input type="file" id="uploadTestFile" accept="image/*" style="display:none;" />
-   <script>
+    <script>
     const video = document.getElementById('video');
-    const fallbackImage = document.getElementById('fallbackImage');
     const canvas = document.getElementById('canvas');
     const startBox = document.getElementById('startBox');
     const startCamBtn = document.getElementById('startCamBtn');
@@ -251,7 +245,6 @@
     const activeLutName = document.getElementById('activeLutName');
 
     let stream = null;
-    let isTestMode = false;
     let useFrontCam = false;
     let torchOn = false;
     let currentLutFilter = 'none';
@@ -261,11 +254,11 @@
     let capturedPhotos = [];
     let selectedPhotoIndex = 0;
 
-    // 1. Buka Kamera dengan Multi-Fallback (Anti Gagal)
+    // 1. Buka Kamera Langsung
     async function startCamera() {
       errorMsg.textContent = '';
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-        errorMsg.innerHTML = 'Browser memblokir akses kamera karena halaman tidak dibuka lewat <b>HTTPS</b> atau <b>localhost</b>. Gunakan tombol <b>Mode Uji Coba</b> di atas atau buka via Live Server.';
+        errorMsg.textContent = 'Browser tidak mendukung akses kamera. Pastikan dibuka lewat HTTPS.';
         return;
       }
 
@@ -291,15 +284,11 @@
       }
 
       if (!stream) {
-        errorMsg.innerHTML = `Kamera gagal dibuka (${lastErr ? lastErr.name : 'Error'}). Pastikan izin kamera di browser sudah <b>Izinkan/Allow</b>, atau gunakan <b>Mode Uji Coba</b>.`;
+        errorMsg.textContent = `Gagal membuka kamera (${lastErr ? lastErr.name : 'Error'}). Cek izin kamera di pengaturan situs Chrome.`;
         return;
       }
 
-      isTestMode = false;
-      fallbackImage.style.display = 'none';
-      video.style.display = 'block';
       video.srcObject = stream;
-
       try { await video.play(); } catch (e) {}
 
       startBox.style.display = 'none';
@@ -315,29 +304,8 @@
 
     startCamBtn.addEventListener('click', startCamera);
     flipCamBtn.addEventListener('click', () => {
-      if (isTestMode) return;
       useFrontCam = !useFrontCam;
       startCamera();
-    });
-
-    // Mode Uji Coba jika kamera fisik tidak tersedia
-    document.getElementById('testImageBtn').addEventListener('click', () => {
-      document.getElementById('uploadTestFile').click();
-    });
-    document.getElementById('uploadTestFile').addEventListener('change', (e) => {
-      const file = e.target.files[0];
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = (ev) => {
-        isTestMode = true;
-        video.style.display = 'none';
-        fallbackImage.src = ev.target.result;
-        fallbackImage.style.display = 'block';
-        startBox.style.display = 'none';
-        resInfo.textContent = 'RES: SIMULASI | FPS: --';
-        aiStatus.textContent = 'AI: Mode Uji Coba';
-      };
-      reader.readAsDataURL(file);
     });
 
     // Grid & Torch
@@ -358,7 +326,7 @@
         torchBtn.textContent = `Torch: ${torchOn ? 'ON' : 'OFF'}`;
         torchBtn.classList.toggle('active', torchOn);
       } else {
-        alert('Perangkat/browser ini tidak mendukung kontrol Torch/Flash.');
+        alert('Perangkat ini tidak mendukung kontrol Torch/Flash lewat browser.');
       }
     });
 
@@ -372,9 +340,8 @@
       const manualFilter = `brightness(${brightnessVal.toFixed(2)}) sepia(${sepiaAmt.toFixed(2)}) hue-rotate(${hueAmt.toFixed(0)}deg)`;
       const combinedFilter = currentLutFilter === 'none' ? manualFilter : `${currentLutFilter} ${manualFilter}`;
 
-      const targetEl = isTestMode ? fallbackImage : video;
-      targetEl.style.filter = combinedFilter;
-      targetEl.style.transform = `scale(${manualState.zoom})`;
+      video.style.filter = combinedFilter;
+      video.style.transform = `scale(${manualState.zoom})`;
 
       if (stream) {
         const track = stream.getVideoTracks()[0];
@@ -466,4 +433,31 @@
       shutter: { min: 15,   max: 1000, step: 15,  format: v => `1/${v}s`, lbl: 'lbl-shutter' },
       wb:      { min: 2800, max: 8000, step: 100, format: v => `${v}K`, lbl: 'lbl-wb' },
       zoom:    { min: 1,    max: 4,    step: 0.1, format: v => `${parseFloat(v).toFixed(1)}x`, lbl: 'lbl-zoom' }
-     
+    };
+
+    document.querySelectorAll('.m-tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        document.querySelectorAll('.m-tab').forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+        activeParam = tab.dataset.param;
+        const cfg = paramConfigs[activeParam];
+        slider.min = cfg.min; slider.max = cfg.max; slider.step = cfg.step;
+        slider.value = manualState[activeParam];
+        sliderValueText.textContent = cfg.format(manualState[activeParam]);
+      });
+    });
+
+    slider.addEventListener('input', () => {
+      const val = parseFloat(slider.value);
+      manualState[activeParam] = val;
+      const cfg = paramConfigs[activeParam];
+      const formatted = cfg.format(val);
+      sliderValueText.textContent = formatted;
+      document.getElementById(cfg.lbl).textContent = formatted.replace(' EV', '');
+      applyCameraEffects();
+    });
+
+    document.getElementById('resetManualBtn').addEventListener('click', () => {
+      manualState.ev = 0; manualState.iso = 100; manualState.shutter = 60; manualState.wb = 5500; manualState.zoom = 1.0;
+      document.getElementById('lbl-ev').textContent = '0.0';
+      
