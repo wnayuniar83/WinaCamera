@@ -255,19 +255,23 @@
     let selectedPhotoIndex = 0;
 
     async function startCamera() {
+      startCamBtn.textContent = '⏳ Membuka Kamera...';
       errorMsg.textContent = '';
+
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-        errorMsg.textContent = 'Browser tidak mendukung kamera. Pastikan menggunakan Chrome terbaru.';
+        startCamBtn.textContent = '📷 Ketuk untuk Aktifkan Kamera';
+        errorMsg.textContent = 'Browser tidak mendukung kamera. Pastikan membuka lewat HTTPS.';
         return;
       }
 
       if (stream) {
         stream.getTracks().forEach(t => t.stop());
+        stream = null;
       }
 
       const facing = useFrontCam ? 'user' : 'environment';
       const constraintsList = [
-        { video: { facingMode: facing, width: { ideal: 1920 }, height: { ideal: 1080 } }, audio: false },
+        { video: { facingMode: { ideal: facing }, width: { ideal: 1920 }, height: { ideal: 1080 } }, audio: false },
         { video: { facingMode: facing }, audio: false },
         { video: true, audio: false }
       ];
@@ -276,32 +280,43 @@
       for (const constraints of constraintsList) {
         try {
           stream = await navigator.mediaDevices.getUserMedia(constraints);
-          break;
+          if (stream) break;
         } catch (err) {
           lastErr = err;
         }
       }
 
       if (!stream) {
-        errorMsg.textContent = `Kamera gagal dibuka (${lastErr ? lastErr.name : 'Error'}). Aktifkan izin Kamera di Pengaturan HP > Aplikasi > Chrome.`;
+        startCamBtn.textContent = '📷 Ketuk untuk Aktifkan Kamera';
+        errorMsg.textContent = `Gagal (${lastErr ? lastErr.name : 'Ditolak'}). Buka Pengaturan Chrome > Izin Situs > Kamera > Izinkan.`;
         return;
       }
 
       video.srcObject = stream;
-      try { await video.play(); } catch (e) {}
+      video.setAttribute('playsinline', true);
+      video.muted = true;
+
+      try {
+        await video.play();
+      } catch (e) {
+        errorMsg.textContent = 'Gagal memutar video: ' + e.message;
+      }
 
       startBox.style.display = 'none';
-      const track = stream.getVideoTracks()[0];
+      const tracks = stream.getVideoTracks();
+      const track = tracks[0];
       const settings = track && track.getSettings ? track.getSettings() : {};
       const w = settings.width || video.videoWidth || 1280;
       const h = settings.height || video.videoHeight || 720;
       const fps = settings.frameRate ? Math.round(settings.frameRate) : 30;
+
       resInfo.textContent = `RES: ${w}x${h} | FPS: ${fps}`;
       aiStatus.textContent = 'AI: Menganalisis Scene...';
       setTimeout(() => { aiStatus.textContent = 'AI: Scene Optimal'; }, 1500);
     }
 
     startCamBtn.addEventListener('click', startCamera);
+
     flipCamBtn.addEventListener('click', () => {
       useFrontCam = !useFrontCam;
       startCamera();
@@ -450,11 +465,4 @@
     });
 
     document.getElementById('resetManualBtn').addEventListener('click', () => {
-      manualState.ev = 0; manualState.iso = 100; manualState.shutter = 60; manualState.wb = 5500; manualState.zoom = 1.0;
-      document.getElementById('lbl-ev').textContent = '0.0';
-      document.getElementById('lbl-iso').textContent = 'AUTO';
-      document.getElementById('lbl-shutter').textContent = '1/60';
-      document.getElementById('lbl-wb').textContent = '5500K';
-      document.getElementById('lbl-zoom').textContent = '1.0x';
-      slider.value = manualState[activeParam];
-    
+                                                                    
