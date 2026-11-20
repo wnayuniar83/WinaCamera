@@ -52,8 +52,8 @@
     <div id="tm">3</div>
 
     <div id="overlay">
-      <button class="btn-m" id="btnStart">Ketuk untuk Aktifkan Kamera</button>
-      <div id="st" style="color:#ffd166;font-size:13px;">Siap Buka Kamera</div>
+      <button class="btn-m" onclick="startCam()">Ketuk untuk Aktifkan Kamera</button>
+      <div id="st" style="color:#ffd166;font-size:13px;">Siap Buka Kamera (v2)</div>
     </div>
 
     <div class="top">
@@ -120,14 +120,12 @@
     var rw = 1280;
     var rh = 720;
 
-    document.getElementById('btnStart').addEventListener('click', startCam);
-
     function startCam() {
       var st = document.getElementById('st');
       st.innerText = 'Meminta izin kamera...';
 
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-        st.innerText = 'Browser tidak mendukung kamera atau bukan HTTPS.';
+        st.innerText = 'Error: Browser tidak mendukung kamera / wajib HTTPS.';
         return;
       }
 
@@ -148,14 +146,12 @@
 
       navigator.mediaDevices.getUserMedia(constraints)
         .then(handleStream)
-        .catch(function(err) {
-          // Fallback jika constraint resolusi/facingMode ditolak perangkat
+        .catch(function() {
           return navigator.mediaDevices.getUserMedia({ video: true, audio: false })
             .then(handleStream);
         })
         .catch(function(e) {
-          st.innerText = 'Gagal: ' + e.name + ' - ' + e.message;
-          alert('Kamera gagal dibuka. Pastikan izin kamera di Chrome sudah diizinkan (ketuk ikon gembok/setelan di sebelah URL).');
+          st.innerText = 'Error: ' + e.name + ' (' + e.message + ')';
         });
     }
 
@@ -163,7 +159,6 @@
       stm = s;
       var v = document.getElementById('vid');
       v.srcObject = s;
-      v.setAttribute('playsinline', true);
       v.play();
       document.getElementById('overlay').style.display = 'none';
       v.onloadedmetadata = function() {
@@ -176,6 +171,14 @@
       document.getElementById('r720').classList.remove('on');
       document.getElementById('r1080').classList.remove('on');
       document.getElementById(id).classList.add('on');
+      startCam();
+    }
+
+    function flipCam() {
+      dir = (dir === 'environment') ? 'user' : 'environment';
+      mir = (dir === 'user');
+      document.getElementById('vid').style.transform = mir ? 'scaleX(-1)' : 'scaleX(1)';
+      document.getElementById('bmir').innerText = mir ? 'Mirror: ON' : 'Mirror: OFF';
       startCam();
     }
 
