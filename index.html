@@ -5,11 +5,10 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <meta name="theme-color" content="#000000">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<title>WinaCam Pro</title>
-<link rel="manifest" id="manifest-placeholder">
+<title>WinaCam Pro 4K</title>
+<link rel="manifest" id="man">
 <style>
-*{box-sizing:border-box;margin:0;padding:0;font-family:sans-serif}
+*{box-sizing:border-box;margin:0;padding:0;font-family:sans-serif;-webkit-tap-highlight-color:transparent}
 html,body{background:#000;color:#fff;overflow:hidden;height:100dvh;width:100vw}
 #view{position:relative;width:100%;height:100%}
 video{width:100%;height:100%;object-fit:cover}
@@ -18,43 +17,124 @@ canvas{display:none}
 .bm{background:#00a8ff;color:#fff;border:0;padding:18px 30px;border-radius:12px;font-size:16px;font-weight:bold}
 .top{position:absolute;top:10px;left:10px;right:10px;z-index:20;display:flex;flex-direction:column;gap:8px}
 .row{display:flex;justify-content:space-between;align-items:center;gap:6px}
-.bg{background:rgba(0,0,0,.7);padding:6px 10px;border-radius:8px;border:1px solid #444;font-size:11px;display:flex;align-items:center;gap:6px}
+.bg{background:rgba(0,0,0,.72);padding:6px 10px;border-radius:8px;border:1px solid #444;font-size:11px;display:flex;align-items:center;gap:6px}
 .bt{background:rgba(0,0,0,.75);border:1px solid #555;color:#fff;border-radius:8px;padding:6px 9px;font-size:11px;font-weight:bold}
 .bt.on{background:#00a8ff;border-color:#00a8ff}
 .hdr.on{background:#ff9f1c;border-color:#ff9f1c;color:#000}
 .bb{background:#00a8ff;border:0;color:#fff;border-radius:5px;padding:4px 8px;font-size:11px;font-weight:bold}
 .grid{position:absolute;inset:0;pointer-events:none;z-index:10;background-image:linear-gradient(to right,rgba(255,255,255,.25) 1px,transparent 1px),linear-gradient(to bottom,rgba(255,255,255,.25) 1px,transparent 1px);background-size:33.33% 33.33%}
-.pnl{position:absolute;bottom:150px;left:12px;right:12px;z-index:40;background:rgba(18,18,18,.95);border:1px solid #444;border-radius:14px;padding:14px;display:none;flex-direction:column;gap:10px}
+.pnl{position:absolute;bottom:175px;left:12px;right:12px;z-index:40;background:rgba(18,18,18,.96);border:1px solid #444;border-radius:14px;padding:14px;display:none;flex-direction:column;gap:10px}
 .pt{font-size:12px;font-weight:bold;color:#00a8ff;display:flex;justify-content:space-between}
 .sr{display:flex;flex-direction:column;gap:3px;font-size:11px}
 input[type=range]{width:100%;accent-color:#00a8ff}
 .og{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .ob{background:rgba(255,255,255,.12);border:1px solid #444;color:#fff;padding:8px;border-radius:8px;font-size:11px}
 .ob.on{background:#00a8ff;border-color:#00a8ff;font-weight:bold}
-.bot{position:absolute;bottom:0;left:0;right:0;z-index:30;background:linear-gradient(transparent,rgba(0,0,0,.96));padding:12px 14px 24px;display:flex;flex-direction:column;gap:12px}
-.lb{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px}
+.bot{position:absolute;bottom:0;left:0;right:0;z-index:30;background:linear-gradient(transparent,rgba(0,0,0,.96));padding:10px 14px 22px;display:flex;flex-direction:column;gap:10px}
+.lb{display:flex;gap:8px;overflow-x:auto;padding-bottom:2px}
 .lb::-webkit-scrollbar{display:none}
-.lbtn{background:#222;color:#fff;border:1px solid #555;padding:7px 13px;border-radius:18px;font-size:12px;white-space:nowrap}
+.lbtn{background:#222;color:#fff;border:1px solid #555;padding:6px 12px;border-radius:18px;font-size:12px;white-space:nowrap}
 .lbtn.on{background:#00a8ff;border-color:#00a8ff;font-weight:bold}
+.md{display:flex;justify-content:center;gap:16px;font-size:12px;font-weight:bold}
+.md span{padding:4px 12px;border-radius:12px;color:#aaa}
+.md span.on{background:rgba(255,255,255,.2);color:#fff}
 .sh{display:flex;justify-content:space-between;align-items:center;padding:0 6px}
-.sht{width:66px;height:66px;border-radius:50%;background:#fff;border:4px solid #888}
+.sht{width:64px;height:64px;border-radius:50%;background:#fff;border:4px solid #888;transition:.15s}
+.sht.vid{background:#ff3b30;border-color:#fff}
+.sht.rec{border-radius:16px;transform:scale(.85)}
 .sb{background:rgba(255,255,255,.18);border:1px solid #555;color:#fff;padding:10px 12px;border-radius:10px;font-size:11px;font-weight:bold}
 #tm{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:80px;font-weight:bold;z-index:45;display:none}
+#rc{position:absolute;top:85px;left:50%;transform:translateX(-50%);background:#ff3b30;padding:4px 12px;border-radius:12px;font-size:12px;font-weight:bold;display:none;z-index:35}
 </style>
-<script>
-var dir='environment',stm=null,lCss='',hdr=false,mir=false,fl=false,tmr=0,rw=1280,rh=720,deferredPrompt=null;
+</head>
+<body>
+<div id="view">
+  <video id="vid" playsinline muted></video>
+  <canvas id="cvs"></canvas>
+  <div class="grid" id="grid"></div>
+  <div id="tm">3</div>
+  <div id="rc">REC 00:00</div>
 
-function mulaiKamera(){
+  <div id="ov">
+    <button type="button" class="bm" onclick="bukaKamera()">Ketuk untuk Aktifkan Kamera</button>
+    <div id="st" style="color:#ffd166;font-size:13px">WinaCam Pro 16MP / 4K Siap</div>
+  </div>
+
+  <div class="top">
+    <div class="row">
+      <div class="bg" id="res">16MP | 4K READY</div>
+      <div style="display:flex;gap:5px">
+        <button type="button" class="bt hdr" id="bhdr" onclick="tglHDR()">HDR: OFF</button>
+        <button type="button" class="bt" id="bfl" onclick="tglFlash()">Flash</button>
+        <button type="button" class="bt" onclick="flipCam()">Flip</button>
+      </div>
+    </div>
+    <div class="row">
+      <div class="bg"><span id="ilut">LUT: ASLI</span><button type="button" class="bb" onclick="copyP()">Salin</button></div>
+      <button type="button" class="bt" onclick="tglPnl('pset')">Setelan</button>
+    </div>
+  </div>
+
+  <div class="pnl" id="ppro">
+    <div class="pt"><span>MANUAL PRO</span><span style="color:#ffd166" onclick="rstPro()">Reset</span></div>
+    <div class="sr"><span>Exposure</span><input type="range" id="exp" min="50" max="160" value="100" oninput="updF()"></div>
+    <div class="sr"><span>Kontras</span><input type="range" id="con" min="60" max="160" value="100" oninput="updF()"></div>
+    <div class="sr"><span>Saturasi</span><input type="range" id="sat" min="0" max="180" value="100" oninput="updF()"></div>
+    <div class="sr"><span>Warmth</span><input type="range" id="wrm" min="0" max="50" value="0" oninput="updF()"></div>
+  </div>
+
+  <div class="pnl" id="pset">
+    <div class="pt"><span>UKURAN & SETELAN</span><span style="color:#ff6b6b" onclick="tglPnl('pset')">Tutup</span></div>
+    <div class="og">
+      <button type="button" class="ob on" id="m16" onclick="setMP(4608,3456,'m16','16MP')">Foto 16MP</button>
+      <button type="button" class="ob" id="m12" onclick="setMP(4000,3000,'m12','12MP')">Foto 12MP</button>
+      <button type="button" class="ob on" id="v4k" onclick="setVR(3840,2160,'v4k','4K')">Video 4K</button>
+      <button type="button" class="ob" id="vhd" onclick="setVR(1920,1080,'vhd','1080p')">Video 1080p</button>
+      <button type="button" class="ob" id="btmr" onclick="tglTmr()">Timer: OFF</button>
+      <button type="button" class="ob on" id="bgrd" onclick="tglGrd()">Grid: ON</button>
+      <button type="button" class="ob" id="bmir" onclick="tglMir()">Mirror: OFF</button>
+      <button type="button" class="ob" style="background:#00a8ff;font-weight:bold" onclick="pasangApp()">Install Aplikasi</button>
+    </div>
+  </div>
+
+  <div class="bot">
+    <div class="lb">
+      <button type="button" class="lbtn on" onclick="setL(this,'ASLI','')">Asli</button>
+      <button type="button" class="lbtn" onclick="setL(this,'CANON G7X','contrast(1.08) saturate(1.22) sepia(0.16) brightness(1.05)')">Canon G7X</button>
+      <button type="button" class="lbtn" onclick="setL(this,'IPHONE 14','contrast(1.06) saturate(1.15) brightness(1.03)')">iPhone 14</button>
+      <button type="button" class="lbtn" onclick="setL(this,'WARM VINTAGE','contrast(1.12) saturate(1.18) sepia(0.28) brightness(1.02)')">Warm Vintage</button>
+      <button type="button" class="lbtn" onclick="setL(this,'TEAL ORANGE','contrast(1.18) saturate(1.3) hue-rotate(-10deg)')">Teal & Orange</button>
+      <button type="button" class="lbtn" onclick="setL(this,'CYBERPUNK','contrast(1.25) saturate(1.5) hue-rotate(25deg)')">Cyberpunk</button>
+      <button type="button" class="lbtn" onclick="setL(this,'B&W NOIR','grayscale(1) contrast(1.35)')">B&W Noir</button>
+    </div>
+    <div class="md">
+      <span id="mfoto" class="on" onclick="setMode('foto')">FOTO</span>
+      <span id="mvid" onclick="setMode('video')">VIDEO 4K</span>
+    </div>
+    <div class="sh">
+      <button type="button" class="sb" onclick="tglPnl('ppro')">Manual Pro</button>
+      <button type="button" class="sht" id="bsh" onclick="aksiUtama()"></button>
+      <label class="sb">Import LUT<input type="file" accept=".cube" style="display:none" onchange="impL(this)"></label>
+    </div>
+  </div>
+</div>
+<script>
+var dir='environment',stm=null,lCss='',hdr=false,mir=false,fl=false,tmr=0;
+var mode='foto',mpW=4608,mpH=3456,mpL='16MP',vrW=3840,vrH=2160,vrL='4K';
+var rec=null,chunks=[],recInt=null,recSec=0,defPrompt=null,rafId=null;
+
+function bukaKamera(){
   var st=document.getElementById('st');
-  st.innerText='Membuka kamera...';
+  st.innerText='Membuka sensor kamera...';
   if(stm){stm.getTracks().forEach(function(t){t.stop()})}
   fl=false;
-  var bfl=document.getElementById('bfl');
-  if(bfl)bfl.classList.remove('on');
-  navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:dir},width:{ideal:rw},height:{ideal:rh}},audio:false})
-  .then(pasangVideo)
-  .catch(function(){return navigator.mediaDevices.getUserMedia({video:true,audio:false}).then(pasangVideo)})
-  .catch(function(e){st.innerText='Error: '+e.name});
+  document.getElementById('bfl').classList.remove('on');
+  navigator.mediaDevices.getUserMedia({
+    video:{facingMode:{ideal:dir},width:{ideal:vrW},height:{ideal:vrH}},
+    audio:(mode==='video')
+  }).then(pasangVideo).catch(function(){
+    return navigator.mediaDevices.getUserMedia({video:true,audio:false}).then(pasangVideo);
+  }).catch(function(e){st.innerText='Gagal: '+e.name});
 }
 
 function pasangVideo(s){
@@ -63,15 +143,37 @@ function pasangVideo(s){
   v.srcObject=s;
   v.play();
   document.getElementById('ov').style.display='none';
-  v.onloadedmetadata=function(){document.getElementById('res').innerText='RES: '+v.videoWidth+'x'+v.videoHeight};
+  updInfo();
 }
 
-function setR(w,h,id){
-  rw=w;rh=h;
-  document.getElementById('r720').classList.remove('on');
-  document.getElementById('r1080').classList.remove('on');
+function updInfo(){
+  document.getElementById('res').innerText='FOTO '+mpL+' | VID '+vrL;
+}
+
+function setMP(w,h,id,lbl){
+  mpW=w;mpH=h;mpL=lbl;
+  document.getElementById('m16').classList.remove('on');
+  document.getElementById('m12').classList.remove('on');
   document.getElementById(id).classList.add('on');
-  mulaiKamera();
+  updInfo();
+}
+
+function setVR(w,h,id,lbl){
+  vrW=w;vrH=h;vrL=lbl;
+  document.getElementById('v4k').classList.remove('on');
+  document.getElementById('vhd').classList.remove('on');
+  document.getElementById(id).classList.add('on');
+  updInfo();
+  if(stm)bukaKamera();
+}
+
+function setMode(m){
+  if(rec&&rec.state==='recording')return;
+  mode=m;
+  document.getElementById('mfoto').classList.toggle('on',m==='foto');
+  document.getElementById('mvid').classList.toggle('on',m==='video');
+  document.getElementById('bsh').classList.toggle('vid',m==='video');
+  bukaKamera();
 }
 
 function flipCam(){
@@ -79,7 +181,7 @@ function flipCam(){
   mir=(dir==='user');
   document.getElementById('vid').style.transform=mir?'scaleX(-1)':'scaleX(1)';
   document.getElementById('bmir').innerText=mir?'Mirror: ON':'Mirror: OFF';
-  mulaiKamera();
+  bukaKamera();
 }
 
 function tglFlash(){
@@ -150,68 +252,96 @@ function impL(i){
   if(i.files&&i.files.length>0){
     var f=i.files.item(0);
     document.getElementById('ilut').innerText='LUT: '+f.name.replace('.cube','').toUpperCase();
-    lCss='contrast(1.1) saturate(1.2)';updF();
+    lCss='contrast(1.12) saturate(1.25)';updF();
   }
 }
 
-function snap(){
+function aksiUtama(){
+  if(mode==='video'){
+    if(rec&&rec.state==='recording'){stopVideo()}else{mulaiVideo()}
+    return;
+  }
   if(tmr>0){
     var c=tmr,el=document.getElementById('tm');el.style.display='block';el.innerText=c;
-    var iv=setInterval(function(){c--;if(c<=0){clearInterval(iv);el.style.display='none';foto()}else{el.innerText=c}},1000);
-  }else{foto()}
+    var iv=setInterval(function(){c--;if(c<=0){clearInterval(iv);el.style.display='none';simpanFoto()}else{el.innerText=c}},1000);
+  }else{simpanFoto()}
 }
 
-function foto(){
+function simpanFoto(){
   var v=document.getElementById('vid'),c=document.getElementById('cvs');
   if(!v.videoWidth)return;
-  c.width=v.videoWidth;c.height=v.videoHeight;
-  var x=c.getContext('2d');x.filter=getComputedStyle(v).filter;
+  var isPortrait=v.videoHeight>v.videoWidth;
+  c.width=isPortrait?mpH:mpW;
+  c.height=isPortrait?mpW:mpH;
+  var x=c.getContext('2d');
+  x.imageSmoothingEnabled=true;
+  x.imageSmoothingQuality='high';
+  x.filter=getComputedStyle(v).filter;
   if(mir){x.translate(c.width,0);x.scale(-1,1)}
   x.drawImage(v,0,0,c.width,c.height);
-  var a=document.createElement('a');a.download='WinaCam_'+Date.now()+'.jpg';a.href=c.toDataURL('image/jpeg',0.95);a.click();
+  var a=document.createElement('a');
+  a.download='WinaCam_'+mpL+'_'+Date.now()+'.jpg';
+  a.href=c.toDataURL('image/jpeg',0.96);
+  a.click();
+}
+
+function mulaiVideo(){
+  var v=document.getElementById('vid'),c=document.getElementById('cvs');
+  if(!v.videoWidth)return;
+  var isPortrait=v.videoHeight>v.videoWidth;
+  c.width=isPortrait?vrH:vrW;
+  c.height=isPortrait?vrW:vrH;
+  var x=c.getContext('2d');
+  function gambarFrame(){
+    x.save();
+    x.filter=getComputedStyle(v).filter;
+    if(mir){x.translate(c.width,0);x.scale(-1,1)}
+    x.drawImage(v,0,0,c.width,c.height);
+    x.restore();
+    rafId=requestAnimationFrame(gambarFrame);
+  }
+  gambarFrame();
+  var cStm=c.captureStream(30);
+  if(stm&&stm.getAudioTracks().length>0){cStm.addTrack(stm.getAudioTracks().shift())}
+  chunks=[];
+  rec=new MediaRecorder(cStm,{videoBitsPerSecond:20000000});
+  rec.ondataavailable=function(e){if(e.data.size>0)chunks.push(e.data)};
+  rec.onstop=function(){
+    cancelAnimationFrame(rafId);
+    var blob=new Blob(chunks,{type:'video/mp4'});
+    var a=document.createElement('a');
+    a.download='WinaCam_'+vrL+'_'+Date.now()+'.mp4';
+    a.href=URL.createObjectURL(blob);
+    a.click();
+  };
+  rec.start();
+  document.getElementById('bsh').classList.add('rec');
+  var rc=document.getElementById('rc');
+  rc.style.display='block';recSec=0;rc.innerText='REC 00:00';
+  recInt=setInterval(function(){
+    recSec++;
+    var m=String(Math.floor(recSec/60)).padStart(2,'0'),s=String(recSec%60).padStart(2,'0');
+    rc.innerText='REC '+m+':'+s;
+  },1000);
+}
+
+function stopVideo(){
+  if(rec&&rec.state==='recording')rec.stop();
+  clearInterval(recInt);
+  document.getElementById('bsh').classList.remove('rec');
+  document.getElementById('rc').style.display='none';
 }
 
 function pasangApp(){
-  if(deferredPrompt){
-    deferredPrompt.prompt();
-    deferredPrompt=null;
-  }else{
-    alert('Ketuk titik tiga (⋮) di pojok kanan atas Chrome -> pilih "Tambahkan ke layar utama" atau "Instal aplikasi".');
-  }
+  if(defPrompt){defPrompt.prompt();defPrompt=null}
+  else{alert('Ketuk titik tiga (⋮) di pojok kanan atas Chrome -> pilih "Tambahkan ke layar utama" atau "Instal aplikasi".')}
 }
-
-window.addEventListener('beforeinstallprompt',function(e){
-  e.preventDefault();
-  deferredPrompt=e;
-});
-
+window.addEventListener('beforeinstallprompt',function(e){e.preventDefault();defPrompt=e});
 (function(){
-  var icon="data:image/svg+xml,<svg xmlns='http://w3.org' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%2300a8ff'/><circle cx='50' cy='50' r='25' fill='white'/></svg>";
-  var man={name:"WinaCam Pro",short_name:"WinaCam",start_url:location.href,display:"standalone",background_color:"#000000",theme_color:"#000000",icons:[{src:icon,sizes:"192x192",type:"image/svg+xml"}]};
-  var blob=new Blob([JSON.stringify(man)],{type:'application/json'});
-  document.getElementById('manifest-placeholder').setAttribute('href',URL.createObjectURL(blob));
+  var ic="data:image/svg+xml,<svg xmlns='http://w3.org' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%2300a8ff'/><circle cx='50' cy='50' r='26' fill='white'/></svg>";
+  var m={name:"WinaCam Pro 4K",short_name:"WinaCam",start_url:location.href,display:"standalone",background_color:"#000000",theme_color:"#000000",icons:[{src:ic,sizes:"192x192",type:"image/svg+xml"}]};
+  document.getElementById('man').setAttribute('href','data:application/manifest+json,'+encodeURIComponent(JSON.stringify(m)));
 })();
 </script>
-</head>
-<body>
-<div id="view">
-  <video id="vid" playsinline muted></video>
-  <canvas id="cvs"></canvas>
-  <div class="grid" id="grid"></div>
-  <div id="tm">3</div>
-
-  <div id="ov">
-    <button type="button" class="bm" onclick="mulaiKamera()">Ketuk untuk Aktifkan Kamera</button>
-    <div id="st" style="color:#ffd166;font-size:13px">Versi 7 - Lengkap</div>
-  </div>
-
-  <div class="top">
-    <div class="row">
-      <div class="bg" id="res">RES: HD | LIVE</div>
-      <div style="display:flex;gap:5px">
-        <button type="button" class="bt hdr" id="bhdr" onclick="tglHDR()">HDR: OFF</button>
-        <button type="button" class="bt" id="bfl" onclick="tglFlash()">Flash</button>
-        <button type="button" class="bt" onclick="flipCam()">Flip</button>
-      </div>
-    </div>
-    <div class="row">
+</body>
+</html>
