@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Pro AI Camera + LUT</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: sans-serif; }
+    html, body { background: #000; color: #fff; overflow: hidden; height: 100dvh; width: 100vw; display: flex; flex-direction: column; }
+    
+    #viewfinder { position: relative; flex: 1; display: flex; justify-content: center; align-items: center; overflow: hidden; }
+    video { position: absolute; width: 1px; height: 1px; opacity: 0; }
+    canvas { width: 100%; height: 100%; object-fit: cover; }
+
+    #start-overlay {
+      position: absolute; z-index: 30; background: rgba(0,0,0,0.85); inset: 0;
+      display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 12px; padding: 20px; text-align: center;
+    }
+    .start-cam-btn {
+      background: #00a8ff; color: #fff; border: none; padding: 14px 24px;
+      border-radius: 12px; font-size: 15px; font-weight: bold; cursor: pointer;
+    }
+    #err-msg { color: #ff6b6b; font-size: 12px; max-width: 300px; }
+
+    .hud-top {
+      position: absolute; top: 10px; left: 10px; right: 10px;
+      display: flex; flex-direction: column; gap: 6px; z-index: 10;
+    }
+    .hud-row { display: flex; justify-content: space-between; align-items: center; width: 100%; }
+    .hud-badge {
+      background: rgba(0, 0, 0, 0.7); padding: 6px 10px; border-radius: 8px;
+      border: 1px solid rgba(255,255,255,0.25); font-size: 11px;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .copy-btn {
+      background: #00a8ff; border: none; color: #fff; font-weight: bold;
+      border-radius: 5px; padding: 4px 8px; cursor: pointer;
+      display: inline-flex; align-items: center; gap: 4px; font-size: 11px;
+    }
+    .copy-btn svg { width: 13px; height: 13px; fill: currentColor; }
+    .top-btn {
+      background: rgba(0, 0, 0, 0.7); border: 1px solid rgba(255,255,255,0.3);
+      color: #fff; border-radius: 8px; padding: 6px 10px; cursor: pointer;
+      font-size: 11px; font-weight: bold;
+    }
+    .top-btn.active { background: #00a8ff; border-color: #00a8ff; }
+
+    .grid-overlay {
+      position: absolute; inset: 0; pointer-events: none; z-index: 5;
+      background-image: 
+        linear-gradient(to right, rgba(255,255,255,0.25) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(255,255,255,0.25) 1px, transparent 1px);
+      background-size: 33.33% 33.33%;
+    }
+
+    .controls-bottom {
+      position: absolute; bottom: 0; left: 0; right: 0; z-index: 20;
+      background: linear-gradient(transparent, rgba(0,0,0,0.95));
+      padding: 12px 15px 25px 15px; display: flex; flex-direction: column; gap: 12px;
+    }
+    .lut-bar { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; }
+    .lut-bar::-webkit-scrollbar { display: none; }
+    .lut-btn {
+      background: rgba(35,35,35,0.9); color: #fff; border: 1px solid #555;
+      padding: 7px 13px; border-radius: 18px; font-size: 12px; white-space: nowrap; cursor: pointer;
+    }
+    .lut-btn.active { background: #00a8ff; border-color: #00a8ff; font-weight: bold; }
+
+    .shutter-row { display: flex; justify-content: space-around; align-items: center; }
+    .shutter-btn {
+      width: 66px; height: 66px; border-radius: 50%; background: #fff;
+      border: 4px solid #888; cursor: pointer;
+    }
+    .shutter-btn:active { transform: scale(0.92); }
+    .side-btn {
+      background: rgba(255,255,255,0.18); border: 1px solid rgba(255,255,255,0.25); color: #fff;
+      padding: 10px 14px; border-radius: 10px; font-size: 12px; cursor: pointer;
+    }
+
+    #ai-status {
+      position: absolute; top: 90px; left: 50%; transform: translateX(-50%);
+      background: rgba(0, 168, 255, 0.95); color: #fff; padding: 6px 14px;
+      border-radius: 20px; font-size: 12px; z-index: 15; display: none; white-space: nowrap;
+    }
+  </style>
+</head>
+<body>
+
+  <div id="viewfinder">
+    <video id="video" autoplay playsinline muted></video>
+    <canvas id="canvas"></canvas>
+    <div class="grid-overlay" id="grid"></div>
+
+    <!-- Tombol Manual Aktifkan Kamera -->
+    <div id="start-overlay">
+      <button class="start-cam-btn" onclick="startCamera()">📷 Ketuk untuk Aktifkan Kamera</button>
+      <div id="err-msg"></div>
+    </div>
+
+    <div class="hud-top">
+      <div class="hud-row">
+        <div class="hud-badge" id="cam-info">RES: -- | FPS: --</div>
+        <div style="display:flex; gap:6px;">
+          <button class="top-btn" id="torch-btn" onclick="toggleTorch()">Torch: OFF</button>
+          <button class="top-btn" onclick="flipCamera()">Flip Cam</button>
+        </div>
+      </div>
+
+      <div class="hud-row">
+        <div class="hud-badge">
+          <span id="lut-info">LUT: ASLI</span>
+          <button class="copy-btn" onclick="copyCameraPreset()">
+            <svg viewBox="0 0 24 24">
+              <path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/>
+            </svg>
+            <span id="copy-label">Salin Preset</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div id="ai-status">AI: Menganalisis Scene...</div>
+
+    <div class="controls-bottom">
+      <div class="lut-bar">
+        <button class="lut-btn active" onclick="setLUT('normal', this)">Asli</button>
+        <button class="lut-btn" onclick="setLUT('canon_g7x', this)">Canon G7X</button>
+        <button class="lut-btn" onclick="setLUT('iphone_14', this)">iPhone 14</button>
+        <button class="lut-btn" onclick="setLUT('warm_vintage', this)">Warm Vintage</button>
+        <button class="lut-btn" onclick="setLUT('teal_orange', this)">Teal & Orange</button>
+        <button class="lut-btn" onclick="setLUT('cyberpunk', this)">Cyberpunk</button>
+        <button class="lut-btn" onclick="setLUT('bw_contrast', this)">B&W Noir</button>
+        <label class="lut-btn" style="border-style: dashed;">
+          + Import .CUBE <input type="file" id="cube-input" accept=".cube" style="display:none;">
+        </label>
+      </div>
+
+      <div class="shutter-row">
+        <button class="side-btn" onclick="toggleGrid(this)">Grid: ON</button>
+        <button class="shutter-btn" id="shutter"></button>
+        <button class="side-btn" id="ai-auto-btn" onclick="triggerAIScene()">AI Auto-LUT</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const video = document.getElementById('video');
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
+    let currentLUT = 'normal';
+    let customCubeLUT = null;
+    let lastTime = performance.now();
+    let frameCount = 0;
+    let facingMode = 'environment';
+    let currentStream = null;
+    let torchOn = false;
+    let loopStarted = false;
+
+    async function startCamera() {
+      const errBox = document.getElementById('err-msg');
+      errBox.innerText = 'Meminta izin kamera...';
+
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        errBox.innerText = 'Error: Browser memblokir kamera karena bukan HTTPS/localhost aman. Pastikan alamat di chrome://flags sudah sama persis dengan port di atas (misal http://localhost:8158).';
+        return;
+      }
+
+      if (currentStream) {
+        currentStream.getTracks().forEach(track => track.stop());
+      }
+      torchOn = false;
+      const torchBtn = document.getElementById('torch-btn');
+      torchBtn.innerText = 'Torch: OFF';
+      torchBtn.classList.remove('active');
+
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: facingMode },
+          audio: false
+        });
+        currentStream = stream;
+        video.srcObject = stream;
+        await video.play();
+        canvas.width = video.videoWidth || 1280;
+        canvas.height = video.videoHeight || 720;
+        document.getElementById('start-overlay').style.display = 'none';
+        if (!loopStarted) {
+          loopStarted = true;
+          renderLoop();
+        }
+      } catch (err) {
+        errBox.innerText = 'Gagal akses kamera: ' + err.name + ' - ' + err.message;
+      }
+    }
+
+    window.addEventListener('load', () => { startCamera(); });
+
+    function flipCamera() {
+      facingMode = (facingMode === 'environment') ? 'user' : 'environment';
+      startCamera();
+    }
+
+    function toggleTorch() {
+      if (!currentStream) return;
+      const tracks = currentStream.getVideoTracks();
+      if (!tracks || tracks.length === 0) return;
+      const track = tracks;
+      const capabilities = track.getCapabilities ? track.getCapabilities() : {};
+      if (!capabilities.torch) {
+        alert("Flash/Torch tidak didukung pada kamera atau browser ini.");
+        return;
+      }
+      torchOn = !torchOn;
+      track.applyConstraints({ advanced: [{ torch: torchOn }] }).then(() => {
+        const btn = document.getElementById('torch-btn');
+        btn.innerText = torchOn ? 'Torch: ON' : 'Torch: OFF';
+        btn.classList.toggle('active', torchOn);
+      }).catch(err => alert("Gagal menyalakan flash: " + err));
+    }
+
+    function copyCameraPreset() {
+      const camInfo = document.getElementById('cam-info').innerText;
+      const lutInfo = document.getElementById('lut-info').innerText;
+      const textToCopy = `[AI LUT CAMERA PRESET]\n${lutInfo}\n${camInfo}`;
+      const textarea = document.createElement('textarea');
+      textarea.value = textToCopy;
+      document.body.appendChild(textarea);
+      textarea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textarea);
+      const label = document.getElementById('copy-label');
+      label.innerText = 'Tersalin!';
+      setTimeout(() => { label.innerText = 'Salin Preset'; }, 1500);
+    }
+
+    function setLUT(lutName, btnElement) {
+      currentLUT = lutName;
