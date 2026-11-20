@@ -11,10 +11,11 @@
     video { width: 100%; height: 100%; object-fit: cover; transition: filter 0.15s; }
     canvas { display: none; }
     #overlay {
-      position: absolute; inset: 0; z-index: 60; background: rgba(0,0,0,0.9);
+      position: absolute; inset: 0; z-index: 60; background: rgba(0,0,0,0.92);
       display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 15px; padding: 20px; text-align: center;
     }
-    .btn-m { background: #00a8ff; color: #fff; border: none; padding: 16px 28px; border-radius: 12px; font-size: 16px; font-weight: bold; }
+    .btn-m { background: #00a8ff; color: #fff; border: none; padding: 16px 28px; border-radius: 12px; font-size: 16px; font-weight: bold; cursor: pointer; }
+    .btn-m:active { transform: scale(0.97); }
     .top { position: absolute; top: 10px; left: 10px; right: 10px; z-index: 25; display: flex; flex-direction: column; gap: 8px; }
     .row { display: flex; justify-content: space-between; align-items: center; gap: 6px; }
     .bg { background: rgba(0,0,0,0.7); padding: 6px 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.25); font-size: 11px; display: flex; align-items: center; gap: 6px; }
@@ -37,6 +38,7 @@
     .lbtn.on { background: #00a8ff; border-color: #00a8ff; font-weight: bold; }
     .sh { display: flex; justify-content: space-between; align-items: center; padding: 0 6px; }
     .sht { width: 66px; height: 66px; border-radius: 50%; background: #fff; border: 4px solid #888; }
+    .sht:active { transform: scale(0.92); }
     .sb { background: rgba(255,255,255,0.18); border: 1px solid rgba(255,255,255,0.25); color: #fff; padding: 10px 12px; border-radius: 10px; font-size: 11px; font-weight: bold; }
     .sb.on { background: #00a8ff; border-color: #00a8ff; }
     #tm { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); font-size: 80px; font-weight: bold; z-index: 45; display: none; }
@@ -50,7 +52,7 @@
     <div id="tm">3</div>
 
     <div id="overlay">
-      <button class="btn-m" onclick="startCam()">Ketuk untuk Aktifkan Kamera</button>
+      <button class="btn-m" id="btnStart">Ketuk untuk Aktifkan Kamera</button>
       <div id="st" style="color:#ffd166;font-size:13px;">Siap Buka Kamera</div>
     </div>
 
@@ -118,30 +120,55 @@
     var rw = 1280;
     var rh = 720;
 
+    document.getElementById('btnStart').addEventListener('click', startCam);
+
     function startCam() {
       var st = document.getElementById('st');
-      st.innerText = 'Menghubungkan...';
+      st.innerText = 'Meminta izin kamera...';
+
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        st.innerText = 'Browser tidak mendukung kamera atau bukan HTTPS.';
+        return;
+      }
+
       if (stm) {
         stm.getTracks().forEach(function(t) { t.stop(); });
       }
       fl = false;
       document.getElementById('bfl').classList.remove('on');
-      navigator.mediaDevices.getUserMedia({
-        video: { facingMode: dir, width: { ideal: rw }, height: { ideal: rh } },
+
+      var constraints = {
+        video: {
+          facingMode: { ideal: dir },
+          width: { ideal: rw },
+          height: { ideal: rh }
+        },
         audio: false
-      }).then(function(s) {
-        stm = s;
-        var v = document.getElementById('vid');
-        v.srcObject = s;
-        v.play();
-        document.getElementById('overlay').style.display = 'none';
-        v.onloadedmetadata = function() {
-          document.getElementById('res').innerText = 'RES: ' + v.videoWidth + 'x' + v.videoHeight;
-        };
-      }).catch(function(e) {
-        st.innerText = 'Error: ' + e.name;
-        alert('Gagal: ' + e.message);
-      });
+      };
+
+      navigator.mediaDevices.getUserMedia(constraints)
+        .then(handleStream)
+        .catch(function(err) {
+          // Fallback jika constraint resolusi/facingMode ditolak perangkat
+          return navigator.mediaDevices.getUserMedia({ video: true, audio: false })
+            .then(handleStream);
+        })
+        .catch(function(e) {
+          st.innerText = 'Gagal: ' + e.name + ' - ' + e.message;
+          alert('Kamera gagal dibuka. Pastikan izin kamera di Chrome sudah diizinkan (ketuk ikon gembok/setelan di sebelah URL).');
+        });
+    }
+
+    function handleStream(s) {
+      stm = s;
+      var v = document.getElementById('vid');
+      v.srcObject = s;
+      v.setAttribute('playsinline', true);
+      v.play();
+      document.getElementById('overlay').style.display = 'none';
+      v.onloadedmetadata = function() {
+        document.getElementById('res').innerText = 'RES: ' + v.videoWidth + 'x' + v.videoHeight;
+      };
     }
 
     function setR(w, h, id) {
@@ -152,28 +179,3 @@
       startCam();
     }
 
-    function flipCam() {
-      dir = (dir === 'environment') ? 'user' : 'environment';
-      mir = (dir === 'user');
-      document.getElementById('vid').style.transform = mir ? 'scaleX(-1)' : 'scaleX(1)';
-      document.getElementById('bmir').innerText = mir ? 'Mirror: ON' : 'Mirror: OFF';
-      startCam();
-    }
-
-    function tglFlash() {
-      if (!stm) return;
-      var tr = stm.getVideoTracks().at(0);
-      if (!tr || !tr.getCapabilities || !tr.getCapabilities().torch) {
-        alert('Flash tidak didukung kamera ini');
-        return;
-      }
-      fl = !fl;
-      tr.applyConstraints({ advanced: [{ torch: fl }] }).then(function() {
-        document.getElementById('bfl').classList.toggle('on', fl);
-      });
-    }
-
-    function tglHDR() {
-      hdr = !hdr;
-      var b = document.getElementById('bhdr');
-      b.innerText = hdr ? 'HDR: ON' : 'HDR: OFF';
