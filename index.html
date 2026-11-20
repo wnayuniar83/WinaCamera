@@ -8,14 +8,18 @@
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: sans-serif; }
     html, body { background: #000; color: #fff; overflow: hidden; height: 100dvh; width: 100vw; }
     #view { position: relative; width: 100%; height: 100%; }
-    video { width: 100%; height: 100%; object-fit: cover; transition: filter 0.15s; }
+    video { width: 100%; height: 100%; object-fit: cover; }
     canvas { display: none; }
     #overlay {
-      position: absolute; inset: 0; z-index: 60; background: rgba(0,0,0,0.92);
+      position: fixed; inset: 0; z-index: 9999; background: rgba(0,0,0,0.95);
       display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 15px; padding: 20px; text-align: center;
     }
-    .btn-m { background: #00a8ff; color: #fff; border: none; padding: 16px 28px; border-radius: 12px; font-size: 16px; font-weight: bold; cursor: pointer; }
-    .btn-m:active { transform: scale(0.97); }
+    .btn-m {
+      background: #00a8ff; color: #fff; border: none; padding: 18px 32px;
+      border-radius: 12px; font-size: 16px; font-weight: bold;
+      touch-action: manipulation; -webkit-tap-highlight-color: transparent;
+    }
+    .btn-m:active { background: #0077b6; }
     .top { position: absolute; top: 10px; left: 10px; right: 10px; z-index: 25; display: flex; flex-direction: column; gap: 8px; }
     .row { display: flex; justify-content: space-between; align-items: center; gap: 6px; }
     .bg { background: rgba(0,0,0,0.7); padding: 6px 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.25); font-size: 11px; display: flex; align-items: center; gap: 6px; }
@@ -38,36 +42,34 @@
     .lbtn.on { background: #00a8ff; border-color: #00a8ff; font-weight: bold; }
     .sh { display: flex; justify-content: space-between; align-items: center; padding: 0 6px; }
     .sht { width: 66px; height: 66px; border-radius: 50%; background: #fff; border: 4px solid #888; }
-    .sht:active { transform: scale(0.92); }
     .sb { background: rgba(255,255,255,0.18); border: 1px solid rgba(255,255,255,0.25); color: #fff; padding: 10px 12px; border-radius: 10px; font-size: 11px; font-weight: bold; }
-    .sb.on { background: #00a8ff; border-color: #00a8ff; }
     #tm { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); font-size: 80px; font-weight: bold; z-index: 45; display: none; }
   </style>
 </head>
 <body>
   <div id="view">
-    <video id="vid" autoplay playsinline muted></video>
+    <video id="vid" playsinline muted></video>
     <canvas id="cvs"></canvas>
     <div class="grid" id="grid"></div>
     <div id="tm">3</div>
 
     <div id="overlay">
-      <button class="btn-m" onclick="startCam()">Ketuk untuk Aktifkan Kamera</button>
-      <div id="st" style="color:#ffd166;font-size:13px;">Siap Buka Kamera (v2)</div>
+      <button type="button" class="btn-m" id="btnCam">Ketuk untuk Aktifkan Kamera</button>
+      <div id="st" style="color:#ffd166;font-size:13px;max-width:300px;">Memeriksa sistem (v3)...</div>
     </div>
 
     <div class="top">
       <div class="row">
         <div class="bg" id="res">RES: HD | LIVE</div>
         <div style="display:flex;gap:5px;">
-          <button class="bt hdr" id="bhdr" onclick="tglHDR()">HDR: OFF</button>
-          <button class="bt" id="bfl" onclick="tglFlash()">Flash</button>
-          <button class="bt" onclick="flipCam()">Flip</button>
+          <button type="button" class="bt hdr" id="bhdr" onclick="tglHDR()">HDR: OFF</button>
+          <button type="button" class="bt" id="bfl" onclick="tglFlash()">Flash</button>
+          <button type="button" class="bt" onclick="flipCam()">Flip</button>
         </div>
       </div>
       <div class="row">
-        <div class="bg"><span id="ilut">LUT: ASLI</span><button class="bb" onclick="copyP()">Salin Preset</button></div>
-        <button class="bt" id="bset" onclick="tglPnl('pset')">Setelan</button>
+        <div class="bg"><span id="ilut">LUT: ASLI</span><button type="button" class="bb" onclick="copyP()">Salin Preset</button></div>
+        <button type="button" class="bt" id="bset" onclick="tglPnl('pset')">Setelan</button>
       </div>
     </div>
 
@@ -82,34 +84,39 @@
     <div class="pnl" id="pset">
       <div class="pt"><span>PENGATURAN</span><span style="color:#ff6b6b;" onclick="tglPnl('pset')">Tutup</span></div>
       <div class="og">
-        <button class="ob on" id="r720" onclick="setR(1280,720,'r720')">HD 720p</button>
-        <button class="ob" id="r1080" onclick="setR(1920,1080,'r1080')">Full HD 1080p</button>
-        <button class="ob" id="btmr" onclick="tglTmr()">Timer: OFF</button>
-        <button class="ob on" id="bgrd" onclick="tglGrd()">Grid: ON</button>
-        <button class="ob" id="bmir" onclick="tglMir()">Mirror: OFF</button>
-        <button class="ob" onclick="alert('Ketuk titik 3 Chrome -> ikon Unduh (panah bawah) untuk simpan offline!')">Simpan Offline</button>
+        <button type="button" class="ob on" id="r720" onclick="setR(1280,720,'r720')">HD 720p</button>
+        <button type="button" class="ob" id="r1080" onclick="setR(1920,1080,'r1080')">Full HD 1080p</button>
+        <button type="button" class="ob" id="btmr" onclick="tglTmr()">Timer: OFF</button>
+        <button type="button" class="ob on" id="bgrd" onclick="tglGrd()">Grid: ON</button>
+        <button type="button" class="ob" id="bmir" onclick="tglMir()">Mirror: OFF</button>
+        <button type="button" class="ob" onclick="alert('Ketuk titik 3 Chrome -> Unduh')">Simpan Offline</button>
       </div>
     </div>
 
     <div class="bot">
       <div class="lb">
-        <button class="lbtn on" onclick="setL(this,'ASLI','')">Asli</button>
-        <button class="lbtn" onclick="setL(this,'CANON G7X','contrast(1.08) saturate(1.22) sepia(0.16) brightness(1.05)')">Canon G7X</button>
-        <button class="lbtn" onclick="setL(this,'IPHONE 14','contrast(1.06) saturate(1.15) brightness(1.03)')">iPhone 14</button>
-        <button class="lbtn" onclick="setL(this,'WARM VINTAGE','contrast(1.12) saturate(1.18) sepia(0.28) brightness(1.02)')">Warm Vintage</button>
-        <button class="lbtn" onclick="setL(this,'TEAL ORANGE','contrast(1.18) saturate(1.3) hue-rotate(-10deg)')">Teal & Orange</button>
-        <button class="lbtn" onclick="setL(this,'CYBERPUNK','contrast(1.25) saturate(1.5) hue-rotate(25deg)')">Cyberpunk</button>
-        <button class="lbtn" onclick="setL(this,'B&W NOIR','grayscale(1) contrast(1.35)')">B&W Noir</button>
+        <button type="button" class="lbtn on" onclick="setL(this,'ASLI','')">Asli</button>
+        <button type="button" class="lbtn" onclick="setL(this,'CANON G7X','contrast(1.08) saturate(1.22) sepia(0.16) brightness(1.05)')">Canon G7X</button>
+        <button type="button" class="lbtn" onclick="setL(this,'IPHONE 14','contrast(1.06) saturate(1.15) brightness(1.03)')">iPhone 14</button>
+        <button type="button" class="lbtn" onclick="setL(this,'WARM VINTAGE','contrast(1.12) saturate(1.18) sepia(0.28) brightness(1.02)')">Warm Vintage</button>
+        <button type="button" class="lbtn" onclick="setL(this,'TEAL ORANGE','contrast(1.18) saturate(1.3) hue-rotate(-10deg)')">Teal & Orange</button>
+        <button type="button" class="lbtn" onclick="setL(this,'CYBERPUNK','contrast(1.25) saturate(1.5) hue-rotate(25deg)')">Cyberpunk</button>
+        <button type="button" class="lbtn" onclick="setL(this,'B&W NOIR','grayscale(1) contrast(1.35)')">B&W Noir</button>
       </div>
       <div class="sh">
-        <button class="sb" id="bpro" onclick="tglPnl('ppro')">Manual Pro</button>
-        <button class="sht" onclick="snap()"></button>
+        <button type="button" class="sb" id="bpro" onclick="tglPnl('ppro')">Manual Pro</button>
+        <button type="button" class="sht" onclick="snap()"></button>
         <label class="sb">Import LUT<input type="file" accept=".cube" style="display:none;" onchange="impL(this)"></label>
       </div>
     </div>
   </div>
 
   <script>
+    window.onerror = function(msg, url, line) {
+      var st = document.getElementById('st');
+      if (st) st.innerText = 'JS Error (Baris ' + line + '): ' + msg;
+    };
+
     var dir = 'environment';
     var stm = null;
     var lCss = '';
@@ -120,12 +127,15 @@
     var rw = 1280;
     var rh = 720;
 
+    document.getElementById('st').innerText = 'Siap Buka Kamera (v3)';
+    document.getElementById('btnCam').onclick = startCam;
+
     function startCam() {
       var st = document.getElementById('st');
       st.innerText = 'Meminta izin kamera...';
 
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-        st.innerText = 'Error: Browser tidak mendukung kamera / wajib HTTPS.';
+        st.innerText = 'Browser tidak mendukung kamera atau wajib HTTPS.';
         return;
       }
 
@@ -135,24 +145,14 @@
       fl = false;
       document.getElementById('bfl').classList.remove('on');
 
-      var constraints = {
-        video: {
-          facingMode: { ideal: dir },
-          width: { ideal: rw },
-          height: { ideal: rh }
-        },
+      navigator.mediaDevices.getUserMedia({
+        video: { facingMode: { ideal: dir }, width: { ideal: rw }, height: { ideal: rh } },
         audio: false
-      };
-
-      navigator.mediaDevices.getUserMedia(constraints)
-        .then(handleStream)
-        .catch(function() {
-          return navigator.mediaDevices.getUserMedia({ video: true, audio: false })
-            .then(handleStream);
-        })
-        .catch(function(e) {
-          st.innerText = 'Error: ' + e.name + ' (' + e.message + ')';
-        });
+      }).then(handleStream).catch(function() {
+        return navigator.mediaDevices.getUserMedia({ video: true, audio: false }).then(handleStream);
+      }).catch(function(e) {
+        st.innerText = 'Error: ' + e.name + ' - ' + e.message;
+      });
     }
 
     function handleStream(s) {
@@ -170,15 +170,3 @@
       rw = w; rh = h;
       document.getElementById('r720').classList.remove('on');
       document.getElementById('r1080').classList.remove('on');
-      document.getElementById(id).classList.add('on');
-      startCam();
-    }
-
-    function flipCam() {
-      dir = (dir === 'environment') ? 'user' : 'environment';
-      mir = (dir === 'user');
-      document.getElementById('vid').style.transform = mir ? 'scaleX(-1)' : 'scaleX(1)';
-      document.getElementById('bmir').innerText = mir ? 'Mirror: ON' : 'Mirror: OFF';
-      startCam();
-    }
-
