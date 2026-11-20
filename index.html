@@ -229,7 +229,7 @@
   </div>
 
   <canvas id="canvas" style="display:none;"></canvas>
-  <script>
+   <script>
     const video = document.getElementById('video');
     const canvas = document.getElementById('canvas');
     const startBox = document.getElementById('startBox');
@@ -260,7 +260,7 @@
 
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
         startCamBtn.textContent = '📷 Ketuk untuk Aktifkan Kamera';
-        errorMsg.textContent = 'Browser tidak mendukung kamera. Pastikan membuka lewat HTTPS.';
+        errorMsg.textContent = 'Browser tidak mendukung kamera. Gunakan Chrome terbaru.';
         return;
       }
 
@@ -293,7 +293,7 @@
       }
 
       video.srcObject = stream;
-      video.setAttribute('playsinline', true);
+      video.setAttribute('playsinline', 'true');
       video.muted = true;
 
       try {
@@ -303,8 +303,7 @@
       }
 
       startBox.style.display = 'none';
-      const tracks = stream.getVideoTracks();
-      const track = tracks[0];
+      const track = stream.getVideoTracks().at(0);
       const settings = track && track.getSettings ? track.getSettings() : {};
       const w = settings.width || video.videoWidth || 1280;
       const h = settings.height || video.videoHeight || 720;
@@ -331,7 +330,7 @@
 
     torchBtn.addEventListener('click', async () => {
       if (!stream) return;
-      const track = stream.getVideoTracks()[0];
+      const track = stream.getVideoTracks().at(0);
       const caps = track && track.getCapabilities ? track.getCapabilities() : {};
       if (caps.torch) {
         torchOn = !torchOn;
@@ -356,7 +355,7 @@
       video.style.transform = `scale(${manualState.zoom})`;
 
       if (stream) {
-        const track = stream.getVideoTracks()[0];
+        const track = stream.getVideoTracks().at(0);
         const caps = track && track.getCapabilities ? track.getCapabilities() : {};
         const adv = {};
         if (caps.zoom) adv.zoom = Math.min(Math.max(manualState.zoom, caps.zoom.min), caps.zoom.max);
@@ -381,7 +380,7 @@
     bindLutButtons();
 
     document.getElementById('cubeInput').addEventListener('change', (e) => {
-      const file = e.target.files[0];
+      const file = e.target.files.item(0);
       if (!file) return;
       const reader = new FileReader();
       reader.onload = (ev) => {
@@ -389,11 +388,13 @@
         let rSum = 0, gSum = 0, bSum = 0, count = 0;
         for (const line of lines) {
           const parts = line.trim().split(/\s+/);
-          if (parts.length === 3 && !isNaN(parts[0]) && !isNaN(parts[1]) && !isNaN(parts[2])) {
-            rSum += parseFloat(parts[0]);
-            gSum += parseFloat(parts[1]);
-            bSum += parseFloat(parts[2]);
-            count++;
+          if (parts.length === 3) {
+            const r = parseFloat(parts.at(0));
+            const g = parseFloat(parts.at(1));
+            const b = parseFloat(parts.at(2));
+            if (!isNaN(r) && !isNaN(g) && !isNaN(b)) {
+              rSum += r; gSum += g; bSum += b; count++;
+            }
           }
         }
         const avgR = count ? rSum / count : 0.5;
@@ -419,9 +420,11 @@
       aiStatus.textContent = 'AI: Menganalisis Scene...';
       setTimeout(() => {
         const btns = Array.from(document.querySelectorAll('.lut-btn')).slice(1);
-        const pick = btns[Math.floor(Math.random() * btns.length)];
-        pick.click();
-        aiStatus.textContent = `AI: Rekomendasi ${pick.dataset.name}`;
+        const pick = btns.at(Math.floor(Math.random() * btns.length));
+        if (pick) {
+          pick.click();
+          aiStatus.textContent = `AI: Rekomendasi ${pick.dataset.name}`;
+        }
       }, 600);
     });
 
@@ -464,5 +467,4 @@
       applyCameraEffects();
     });
 
-    document.getElementById('resetManualBtn').addEventListener('click', () => {
-                                                                    
+                             
