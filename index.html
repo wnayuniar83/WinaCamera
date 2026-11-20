@@ -5,7 +5,9 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <meta name="theme-color" content="#000000">
 <meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
 <title>WinaCam Pro</title>
+<link rel="manifest" id="manifest-placeholder">
 <style>
 *{box-sizing:border-box;margin:0;padding:0;font-family:sans-serif}
 html,body{background:#000;color:#fff;overflow:hidden;height:100dvh;width:100vw}
@@ -39,6 +41,157 @@ input[type=range]{width:100%;accent-color:#00a8ff}
 .sb{background:rgba(255,255,255,.18);border:1px solid #555;color:#fff;padding:10px 12px;border-radius:10px;font-size:11px;font-weight:bold}
 #tm{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:80px;font-weight:bold;z-index:45;display:none}
 </style>
+<script>
+var dir='environment',stm=null,lCss='',hdr=false,mir=false,fl=false,tmr=0,rw=1280,rh=720,deferredPrompt=null;
+
+function mulaiKamera(){
+  var st=document.getElementById('st');
+  st.innerText='Membuka kamera...';
+  if(stm){stm.getTracks().forEach(function(t){t.stop()})}
+  fl=false;
+  var bfl=document.getElementById('bfl');
+  if(bfl)bfl.classList.remove('on');
+  navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:dir},width:{ideal:rw},height:{ideal:rh}},audio:false})
+  .then(pasangVideo)
+  .catch(function(){return navigator.mediaDevices.getUserMedia({video:true,audio:false}).then(pasangVideo)})
+  .catch(function(e){st.innerText='Error: '+e.name});
+}
+
+function pasangVideo(s){
+  stm=s;
+  var v=document.getElementById('vid');
+  v.srcObject=s;
+  v.play();
+  document.getElementById('ov').style.display='none';
+  v.onloadedmetadata=function(){document.getElementById('res').innerText='RES: '+v.videoWidth+'x'+v.videoHeight};
+}
+
+function setR(w,h,id){
+  rw=w;rh=h;
+  document.getElementById('r720').classList.remove('on');
+  document.getElementById('r1080').classList.remove('on');
+  document.getElementById(id).classList.add('on');
+  mulaiKamera();
+}
+
+function flipCam(){
+  dir=(dir==='environment')?'user':'environment';
+  mir=(dir==='user');
+  document.getElementById('vid').style.transform=mir?'scaleX(-1)':'scaleX(1)';
+  document.getElementById('bmir').innerText=mir?'Mirror: ON':'Mirror: OFF';
+  mulaiKamera();
+}
+
+function tglFlash(){
+  if(!stm)return;
+  var tr=stm.getVideoTracks().shift();
+  if(!tr||!tr.getCapabilities||!tr.getCapabilities().torch){alert('Flash tidak didukung');return}
+  fl=!fl;
+  tr.applyConstraints({advanced:[{torch:fl}]}).then(function(){document.getElementById('bfl').classList.toggle('on',fl)});
+}
+
+function tglHDR(){
+  hdr=!hdr;
+  var b=document.getElementById('bhdr');
+  b.innerText=hdr?'HDR: ON':'HDR: OFF';
+  b.classList.toggle('on',hdr);
+  updF();
+}
+
+function setL(el,n,c){
+  document.querySelectorAll('.lbtn').forEach(function(b){b.classList.remove('on')});
+  el.classList.add('on');
+  document.getElementById('ilut').innerText='LUT: '+n;
+  lCss=c;
+  updF();
+}
+
+function updF(){
+  var e=document.getElementById('exp').value,c=document.getElementById('con').value,s=document.getElementById('sat').value,w=document.getElementById('wrm').value;
+  var h=hdr?' contrast(1.12) saturate(1.15)':'';
+  document.getElementById('vid').style.filter=lCss+' brightness('+(e/100)+') contrast('+(c/100)+') saturate('+(s/100)+') sepia('+(w/100)+')'+h;
+}
+
+function rstPro(){
+  document.getElementById('exp').value=100;document.getElementById('con').value=100;document.getElementById('sat').value=100;document.getElementById('wrm').value=0;updF();
+}
+
+function tglPnl(id){
+  var p=document.getElementById(id),v=p.style.display==='flex';
+  document.getElementById('ppro').style.display='none';document.getElementById('pset').style.display='none';
+  p.style.display=v?'none':'flex';
+}
+
+function tglTmr(){
+  tmr=tmr===0?3:(tmr===3?5:0);
+  document.getElementById('btmr').innerText=tmr===0?'Timer: OFF':'Timer: '+tmr+'s';
+  document.getElementById('btmr').classList.toggle('on',tmr>0);
+}
+
+function tglGrd(){
+  var g=document.getElementById('grid'),on=g.style.display!=='none';
+  g.style.display=on?'none':'block';
+  document.getElementById('bgrd').innerText=on?'Grid: OFF':'Grid: ON';
+  document.getElementById('bgrd').classList.toggle('on',!on);
+}
+
+function tglMir(){
+  mir=!mir;
+  document.getElementById('vid').style.transform=mir?'scaleX(-1)':'scaleX(1)';
+  document.getElementById('bmir').innerText=mir?'Mirror: ON':'Mirror: OFF';
+  document.getElementById('bmir').classList.toggle('on',mir);
+}
+
+function copyP(){
+  if(navigator.clipboard)navigator.clipboard.writeText(document.getElementById('ilut').innerText).then(function(){alert('Preset disalin')});
+}
+
+function impL(i){
+  if(i.files&&i.files.length>0){
+    var f=i.files.item(0);
+    document.getElementById('ilut').innerText='LUT: '+f.name.replace('.cube','').toUpperCase();
+    lCss='contrast(1.1) saturate(1.2)';updF();
+  }
+}
+
+function snap(){
+  if(tmr>0){
+    var c=tmr,el=document.getElementById('tm');el.style.display='block';el.innerText=c;
+    var iv=setInterval(function(){c--;if(c<=0){clearInterval(iv);el.style.display='none';foto()}else{el.innerText=c}},1000);
+  }else{foto()}
+}
+
+function foto(){
+  var v=document.getElementById('vid'),c=document.getElementById('cvs');
+  if(!v.videoWidth)return;
+  c.width=v.videoWidth;c.height=v.videoHeight;
+  var x=c.getContext('2d');x.filter=getComputedStyle(v).filter;
+  if(mir){x.translate(c.width,0);x.scale(-1,1)}
+  x.drawImage(v,0,0,c.width,c.height);
+  var a=document.createElement('a');a.download='WinaCam_'+Date.now()+'.jpg';a.href=c.toDataURL('image/jpeg',0.95);a.click();
+}
+
+function pasangApp(){
+  if(deferredPrompt){
+    deferredPrompt.prompt();
+    deferredPrompt=null;
+  }else{
+    alert('Ketuk titik tiga (⋮) di pojok kanan atas Chrome -> pilih "Tambahkan ke layar utama" atau "Instal aplikasi".');
+  }
+}
+
+window.addEventListener('beforeinstallprompt',function(e){
+  e.preventDefault();
+  deferredPrompt=e;
+});
+
+(function(){
+  var icon="data:image/svg+xml,<svg xmlns='http://w3.org' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%2300a8ff'/><circle cx='50' cy='50' r='25' fill='white'/></svg>";
+  var man={name:"WinaCam Pro",short_name:"WinaCam",start_url:location.href,display:"standalone",background_color:"#000000",theme_color:"#000000",icons:[{src:icon,sizes:"192x192",type:"image/svg+xml"}]};
+  var blob=new Blob([JSON.stringify(man)],{type:'application/json'});
+  document.getElementById('manifest-placeholder').setAttribute('href',URL.createObjectURL(blob));
+})();
+</script>
 </head>
 <body>
 <div id="view">
@@ -48,45 +201,9 @@ input[type=range]{width:100%;accent-color:#00a8ff}
   <div id="tm">3</div>
 
   <div id="ov">
-    <button type="button" class="bm" id="btnStart">Ketuk untuk Aktifkan Kamera</button>
-    <div id="st" style="color:#ffd166;font-size:13px">Versi 6 - Siap</div>
+    <button type="button" class="bm" onclick="mulaiKamera()">Ketuk untuk Aktifkan Kamera</button>
+    <div id="st" style="color:#ffd166;font-size:13px">Versi 7 - Lengkap</div>
   </div>
-
-  <script>
-    var dir='environment',stm=null,lCss='',hdr=false,mir=false,fl=false,tmr=0,rw=1280,rh=720;
-    function mulaiKamera(){
-      var st=document.getElementById('st');
-      st.innerText='Membuka kamera...';
-      if(location.protocol!=='https:'&&location.hostname!=='localhost'){
-        st.innerText='Wajib dibuka lewat link HTTPS GitHub (bukan file offline).';
-        return;
-      }
-      if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){
-        st.innerText='Browser tidak mendukung fitur kamera.';
-        return;
-      }
-      if(stm){stm.getTracks().forEach(function(t){t.stop()})}
-      fl=false;
-      var bfl=document.getElementById('bfl');
-      if(bfl)bfl.classList.remove('on');
-      navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:dir},width:{ideal:rw},height:{ideal:rh}},audio:false})
-      .then(pasangVideo)
-      .catch(function(){return navigator.mediaDevices.getUserMedia({video:true,audio:false}).then(pasangVideo)})
-      .catch(function(e){st.innerText='Izin ditolak / Error: '+e.name});
-    }
-    function pasangVideo(s){
-      stm=s;
-      var v=document.getElementById('vid');
-      v.srcObject=s;
-      v.play();
-      document.getElementById('ov').style.display='none';
-      v.onloadedmetadata=function(){
-        var r=document.getElementById('res');
-        if(r)r.innerText='RES: '+v.videoWidth+'x'+v.videoHeight;
-      };
-    }
-    document.getElementById('btnStart').addEventListener('click',mulaiKamera);
-  </script>
 
   <div class="top">
     <div class="row">
@@ -98,84 +215,3 @@ input[type=range]{width:100%;accent-color:#00a8ff}
       </div>
     </div>
     <div class="row">
-      <div class="bg"><span id="ilut">LUT: ASLI</span><button type="button" class="bb" onclick="copyP()">Salin</button></div>
-      <button type="button" class="bt" onclick="tglPnl('pset')">Setelan</button>
-    </div>
-  </div>
-
-  <div class="pnl" id="ppro">
-    <div class="pt"><span>MANUAL PRO</span><span style="color:#ffd166" onclick="rstPro()">Reset</span></div>
-    <div class="sr"><span>Exposure</span><input type="range" id="exp" min="50" max="160" value="100" oninput="updF()"></div>
-    <div class="sr"><span>Kontras</span><input type="range" id="con" min="60" max="160" value="100" oninput="updF()"></div>
-    <div class="sr"><span>Saturasi</span><input type="range" id="sat" min="0" max="180" value="100" oninput="updF()"></div>
-    <div class="sr"><span>Warmth</span><input type="range" id="wrm" min="0" max="50" value="0" oninput="updF()"></div>
-  </div>
-
-  <div class="pnl" id="pset">
-    <div class="pt"><span>PENGATURAN</span><span style="color:#ff6b6b" onclick="tglPnl('pset')">Tutup</span></div>
-    <div class="og">
-      <button type="button" class="ob on" id="r720" onclick="setR(1280,720,'r720')">HD 720p</button>
-      <button type="button" class="ob" id="r1080" onclick="setR(1920,1080,'r1080')">Full HD 1080p</button>
-      <button type="button" class="ob" id="btmr" onclick="tglTmr()">Timer: OFF</button>
-      <button type="button" class="ob on" id="bgrd" onclick="tglGrd()">Grid: ON</button>
-      <button type="button" class="ob" id="bmir" onclick="tglMir()">Mirror: OFF</button>
-      <button type="button" class="ob" onclick="alert('Ketuk titik 3 kanan atas Chrome -> Tambahkan ke layar utama')">Pasang ke HP</button>
-    </div>
-  </div>
-
-  <div class="bot">
-    <div class="lb">
-      <button type="button" class="lbtn on" onclick="setL(this,'ASLI','')">Asli</button>
-      <button type="button" class="lbtn" onclick="setL(this,'CANON G7X','contrast(1.08) saturate(1.22) sepia(0.16) brightness(1.05)')">Canon G7X</button>
-      <button type="button" class="lbtn" onclick="setL(this,'IPHONE 14','contrast(1.06) saturate(1.15) brightness(1.03)')">iPhone 14</button>
-      <button type="button" class="lbtn" onclick="setL(this,'WARM VINTAGE','contrast(1.12) saturate(1.18) sepia(0.28) brightness(1.02)')">Warm Vintage</button>
-      <button type="button" class="lbtn" onclick="setL(this,'TEAL ORANGE','contrast(1.18) saturate(1.3) hue-rotate(-10deg)')">Teal & Orange</button>
-      <button type="button" class="lbtn" onclick="setL(this,'CYBERPUNK','contrast(1.25) saturate(1.5) hue-rotate(25deg)')">Cyberpunk</button>
-      <button type="button" class="lbtn" onclick="setL(this,'B&W NOIR','grayscale(1) contrast(1.35)')">B&W Noir</button>
-    </div>
-    <div class="sh">
-      <button type="button" class="sb" onclick="tglPnl('ppro')">Manual Pro</button>
-      <button type="button" class="sht" onclick="snap()"></button>
-      <label class="sb">Import LUT<input type="file" accept=".cube" style="display:none" onchange="impL(this)"></label>
-    </div>
-  </div>
-</div>
-
-<script>
-function setR(w,h,id){
-  rw=w;rh=h;
-  document.getElementById('r720').classList.remove('on');
-  document.getElementById('r1080').classList.remove('on');
-  document.getElementById(id).classList.add('on');
-  mulaiKamera();
-}
-function flipCam(){
-  dir=(dir==='environment')?'user':'environment';
-  mir=(dir==='user');
-  document.getElementById('vid').style.transform=mir?'scaleX(-1)':'scaleX(1)';
-  document.getElementById('bmir').innerText=mir?'Mirror: ON':'Mirror: OFF';
-  mulaiKamera();
-}
-function tglFlash(){
-  if(!stm)return;
-  var tr=stm.getVideoTracks().shift();
-  if(!tr||!tr.getCapabilities||!tr.getCapabilities().torch){alert('Flash tidak didukung');return}
-  fl=!fl;
-  tr.applyConstraints({advanced:[{torch:fl}]}).then(function(){document.getElementById('bfl').classList.toggle('on',fl)});
-}
-function tglHDR(){
-  hdr=!hdr;
-  var b=document.getElementById('bhdr');
-  b.innerText=hdr?'HDR: ON':'HDR: OFF';
-  b.classList.toggle('on',hdr);
-  updF();
-}
-function setL(el,n,c){
-  document.querySelectorAll('.lbtn').forEach(function(b){b.classList.remove('on')});
-  el.classList.add('on');
-  document.getElementById('ilut').innerText='LUT: '+n;
-  lCss=c;
-  updF();
-}
-function updF(){
-  var e=document.getElementById('exp').value,c=document.getElementById('con').value,s=document.getElementById('sat').value,w=document.getElementById('wrm').value;
