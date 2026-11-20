@@ -1,176 +1,185 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>WinaCam Pro</title>
-  <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; font-family: sans-serif; }
-    html, body { background: #000; color: #fff; overflow: hidden; height: 100dvh; width: 100vw; }
-    #view { position: relative; width: 100%; height: 100%; }
-    video { width: 100%; height: 100%; object-fit: cover; }
-    canvas { display: none; }
-    #overlay {
-      position: fixed; inset: 0; z-index: 9999; background: rgba(0,0,0,0.95);
-      display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 15px; padding: 20px; text-align: center;
-    }
-    .btn-m {
-      background: #00a8ff; color: #fff; border: none; padding: 18px 32px;
-      border-radius: 12px; font-size: 16px; font-weight: bold;
-    }
-    .top { position: absolute; top: 10px; left: 10px; right: 10px; z-index: 25; display: flex; flex-direction: column; gap: 8px; }
-    .row { display: flex; justify-content: space-between; align-items: center; gap: 6px; }
-    .bg { background: rgba(0,0,0,0.7); padding: 6px 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.25); font-size: 11px; display: flex; align-items: center; gap: 6px; }
-    .bt { background: rgba(0,0,0,0.75); border: 1px solid rgba(255,255,255,0.3); color: #fff; border-radius: 8px; padding: 6px 9px; font-size: 11px; font-weight: bold; }
-    .bt.on { background: #00a8ff; border-color: #00a8ff; }
-    .hdr.on { background: #ff9f1c; border-color: #ff9f1c; color: #000; }
-    .bb { background: #00a8ff; border: none; color: #fff; border-radius: 5px; padding: 4px 8px; font-size: 11px; font-weight: bold; }
-    .grid { position: absolute; inset: 0; pointer-events: none; z-index: 10; background-image: linear-gradient(to right, rgba(255,255,255,0.25) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,0.25) 1px, transparent 1px); background-size: 33.33% 33.33%; }
-    .pnl { position: absolute; bottom: 155px; left: 12px; right: 12px; z-index: 40; background: rgba(18,18,18,0.95); border: 1px solid rgba(255,255,255,0.25); border-radius: 14px; padding: 14px; display: none; flex-direction: column; gap: 10px; }
-    .pt { font-size: 12px; font-weight: bold; color: #00a8ff; display: flex; justify-content: space-between; }
-    .sr { display: flex; flex-direction: column; gap: 3px; font-size: 11px; }
-    input[type=range] { width: 100%; accent-color: #00a8ff; }
-    .og { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-    .ob { background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.2); color: #fff; padding: 8px; border-radius: 8px; font-size: 11px; text-align: center; }
-    .ob.on { background: #00a8ff; border-color: #00a8ff; font-weight: bold; }
-    .bot { position: absolute; bottom: 0; left: 0; right: 0; z-index: 30; background: linear-gradient(transparent, rgba(0,0,0,0.96)); padding: 12px 14px 24px 14px; display: flex; flex-direction: column; gap: 12px; }
-    .lb { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; }
-    .lb::-webkit-scrollbar { display: none; }
-    .lbtn { background: rgba(35,35,35,0.9); color: #fff; border: 1px solid #555; padding: 7px 13px; border-radius: 18px; font-size: 12px; white-space: nowrap; }
-    .lbtn.on { background: #00a8ff; border-color: #00a8ff; font-weight: bold; }
-    .sh { display: flex; justify-content: space-between; align-items: center; padding: 0 6px; }
-    .sht { width: 66px; height: 66px; border-radius: 50%; background: #fff; border: 4px solid #888; }
-    .sb { background: rgba(255,255,255,0.18); border: 1px solid rgba(255,255,255,0.25); color: #fff; padding: 10px 12px; border-radius: 10px; font-size: 11px; font-weight: bold; }
-    #tm { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); font-size: 80px; font-weight: bold; z-index: 45; display: none; }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>WinaCam Pro</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;font-family:sans-serif}
+html,body{background:#000;color:#fff;overflow:hidden;height:100dvh;width:100vw}
+#view{position:relative;width:100%;height:100%}
+video{width:100%;height:100%;object-fit:cover}
+canvas{display:none}
+#ov{position:fixed;inset:0;z-index:99;background:rgba(0,0,0,.95);display:flex;flex-direction:column;justify-content:center;align-items:center;gap:14px;padding:20px;text-align:center}
+.bm{background:#00a8ff;color:#fff;border:0;padding:16px 28px;border-radius:12px;font-size:16px;font-weight:bold}
+.top{position:absolute;top:10px;left:10px;right:10px;z-index:20;display:flex;flex-direction:column;gap:8px}
+.row{display:flex;justify-content:space-between;align-items:center;gap:6px}
+.bg{background:rgba(0,0,0,.7);padding:6px 10px;border-radius:8px;border:1px solid #444;font-size:11px;display:flex;align-items:center;gap:6px}
+.bt{background:rgba(0,0,0,.75);border:1px solid #555;color:#fff;border-radius:8px;padding:6px 9px;font-size:11px;font-weight:bold}
+.bt.on{background:#00a8ff;border-color:#00a8ff}
+.hdr.on{background:#ff9f1c;border-color:#ff9f1c;color:#000}
+.bb{background:#00a8ff;border:0;color:#fff;border-radius:5px;padding:4px 8px;font-size:11px;font-weight:bold}
+.grid{position:absolute;inset:0;pointer-events:none;z-index:10;background-image:linear-gradient(to right,rgba(255,255,255,.25) 1px,transparent 1px),linear-gradient(to bottom,rgba(255,255,255,.25) 1px,transparent 1px);background-size:33.33% 33.33%}
+.pnl{position:absolute;bottom:150px;left:12px;right:12px;z-index:40;background:rgba(18,18,18,.95);border:1px solid #444;border-radius:14px;padding:14px;display:none;flex-direction:column;gap:10px}
+.pt{font-size:12px;font-weight:bold;color:#00a8ff;display:flex;justify-content:space-between}
+.sr{display:flex;flex-direction:column;gap:3px;font-size:11px}
+input[type=range]{width:100%;accent-color:#00a8ff}
+.og{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.ob{background:rgba(255,255,255,.12);border:1px solid #444;color:#fff;padding:8px;border-radius:8px;font-size:11px}
+.ob.on{background:#00a8ff;border-color:#00a8ff;font-weight:bold}
+.bot{position:absolute;bottom:0;left:0;right:0;z-index:30;background:linear-gradient(transparent,rgba(0,0,0,.96));padding:12px 14px 24px;display:flex;flex-direction:column;gap:12px}
+.lb{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px}
+.lb::-webkit-scrollbar{display:none}
+.lbtn{background:#222;color:#fff;border:1px solid #555;padding:7px 13px;border-radius:18px;font-size:12px;white-space:nowrap}
+.lbtn.on{background:#00a8ff;border-color:#00a8ff;font-weight:bold}
+.sh{display:flex;justify-content:space-between;align-items:center;padding:0 6px}
+.sht{width:66px;height:66px;border-radius:50%;background:#fff;border:4px solid #888}
+.sb{background:rgba(255,255,255,.18);border:1px solid #555;color:#fff;padding:10px 12px;border-radius:10px;font-size:11px;font-weight:bold}
+#tm{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:80px;font-weight:bold;z-index:45;display:none}
+</style>
 </head>
 <body>
-  <div id="view">
-    <video id="vid" playsinline muted></video>
-    <canvas id="cvs"></canvas>
-    <div class="grid" id="grid"></div>
-    <div id="tm">3</div>
+<div id="view">
+  <video id="vid" playsinline muted></video>
+  <canvas id="cvs"></canvas>
+  <div class="grid" id="grid"></div>
+  <div id="tm">3</div>
 
-    <div id="overlay">
-      <button type="button" class="btn-m" id="btnCam">Ketuk untuk Aktifkan Kamera</button>
-      <div id="st" style="color:#ffd166;font-size:13px;max-width:300px;">Memeriksa sistem (v4)...</div>
-    </div>
+  <div id="ov">
+    <button type="button" class="bm" onclick="bukaKamera()">Ketuk untuk Aktifkan Kamera</button>
+    <div id="st" style="color:#ffd166;font-size:13px">Versi 5 - Siap</div>
+  </div>
 
-    <div class="top">
-      <div class="row">
-        <div class="bg" id="res">RES: HD | LIVE</div>
-        <div style="display:flex;gap:5px;">
-          <button type="button" class="bt hdr" id="bhdr" onclick="tglHDR()">HDR: OFF</button>
-          <button type="button" class="bt" id="bfl" onclick="tglFlash()">Flash</button>
-          <button type="button" class="bt" onclick="flipCam()">Flip</button>
-        </div>
-      </div>
-      <div class="row">
-        <div class="bg"><span id="ilut">LUT: ASLI</span><button type="button" class="bb" onclick="copyP()">Salin Preset</button></div>
-        <button type="button" class="bt" id="bset" onclick="tglPnl('pset')">Setelan</button>
+  <div class="top">
+    <div class="row">
+      <div class="bg" id="res">RES: HD | LIVE</div>
+      <div style="display:flex;gap:5px">
+        <button type="button" class="bt hdr" id="bhdr" onclick="tglHDR()">HDR: OFF</button>
+        <button type="button" class="bt" id="bfl" onclick="tglFlash()">Flash</button>
+        <button type="button" class="bt" onclick="flipCam()">Flip</button>
       </div>
     </div>
-
-    <div class="pnl" id="ppro">
-      <div class="pt"><span>MANUAL PRO</span><span style="color:#ffd166;" onclick="rstPro()">Reset</span></div>
-      <div class="sr"><span>Exposure</span><input type="range" id="exp" min="50" max="160" value="100" oninput="updF()"></div>
-      <div class="sr"><span>Kontras</span><input type="range" id="con" min="60" max="160" value="100" oninput="updF()"></div>
-      <div class="sr"><span>Saturasi</span><input type="range" id="sat" min="0" max="180" value="100" oninput="updF()"></div>
-      <div class="sr"><span>Warmth (WB)</span><input type="range" id="wrm" min="0" max="50" value="0" oninput="updF()"></div>
-    </div>
-
-    <div class="pnl" id="pset">
-      <div class="pt"><span>PENGATURAN</span><span style="color:#ff6b6b;" onclick="tglPnl('pset')">Tutup</span></div>
-      <div class="og">
-        <button type="button" class="ob on" id="r720" onclick="setR(1280,720,'r720')">HD 720p</button>
-        <button type="button" class="ob" id="r1080" onclick="setR(1920,1080,'r1080')">Full HD 1080p</button>
-        <button type="button" class="ob" id="btmr" onclick="tglTmr()">Timer: OFF</button>
-        <button type="button" class="ob on" id="bgrd" onclick="tglGrd()">Grid: ON</button>
-        <button type="button" class="ob" id="bmir" onclick="tglMir()">Mirror: OFF</button>
-        <button type="button" class="ob" onclick="alert('Ketuk titik 3 Chrome -> Unduh')">Simpan Offline</button>
-      </div>
-    </div>
-
-    <div class="bot">
-      <div class="lb">
-        <button type="button" class="lbtn on" onclick="setL(this,'ASLI','')">Asli</button>
-        <button type="button" class="lbtn" onclick="setL(this,'CANON G7X','contrast(1.08) saturate(1.22) sepia(0.16) brightness(1.05)')">Canon G7X</button>
-        <button type="button" class="lbtn" onclick="setL(this,'IPHONE 14','contrast(1.06) saturate(1.15) brightness(1.03)')">iPhone 14</button>
-        <button type="button" class="lbtn" onclick="setL(this,'WARM VINTAGE','contrast(1.12) saturate(1.18) sepia(0.28) brightness(1.02)')">Warm Vintage</button>
-        <button type="button" class="lbtn" onclick="setL(this,'TEAL ORANGE','contrast(1.18) saturate(1.3) hue-rotate(-10deg)')">Teal & Orange</button>
-        <button type="button" class="lbtn" onclick="setL(this,'CYBERPUNK','contrast(1.25) saturate(1.5) hue-rotate(25deg)')">Cyberpunk</button>
-        <button type="button" class="lbtn" onclick="setL(this,'B&W NOIR','grayscale(1) contrast(1.35)')">B&W Noir</button>
-      </div>
-      <div class="sh">
-        <button type="button" class="sb" id="bpro" onclick="tglPnl('ppro')">Manual Pro</button>
-        <button type="button" class="sht" onclick="snap()"></button>
-        <label class="sb">Import LUT<input type="file" accept=".cube" style="display:none;" onchange="impL(this)"></label>
-      </div>
+    <div class="row">
+      <div class="bg"><span id="ilut">LUT: ASLI</span><button type="button" class="bb" onclick="copyP()">Salin</button></div>
+      <button type="button" class="bt" onclick="tglPnl('pset')">Setelan</button>
     </div>
   </div>
 
-  <script>
-    var dir = 'environment';
-    var stm = null;
-    var lCss = '';
-    var hdr = false;
-    var mir = false;
-    var fl = false;
-    var tmr = 0;
-    var rw = 1280;
-    var rh = 720;
+  <div class="pnl" id="ppro">
+    <div class="pt"><span>MANUAL PRO</span><span style="color:#ffd166" onclick="rstPro()">Reset</span></div>
+    <div class="sr"><span>Exposure</span><input type="range" id="exp" min="50" max="160" value="100" oninput="updF()"></div>
+    <div class="sr"><span>Kontras</span><input type="range" id="con" min="60" max="160" value="100" oninput="updF()"></div>
+    <div class="sr"><span>Saturasi</span><input type="range" id="sat" min="0" max="180" value="100" oninput="updF()"></div>
+    <div class="sr"><span>Warmth</span><input type="range" id="wrm" min="0" max="50" value="0" oninput="updF()"></div>
+  </div>
 
-    function startCam() {
-      var st = document.getElementById('st');
-      st.innerText = 'Meminta izin kamera...';
+  <div class="pnl" id="pset">
+    <div class="pt"><span>PENGATURAN</span><span style="color:#ff6b6b" onclick="tglPnl('pset')">Tutup</span></div>
+    <div class="og">
+      <button type="button" class="ob on" id="r720" onclick="setR(1280,720,'r720')">HD 720p</button>
+      <button type="button" class="ob" id="r1080" onclick="setR(1920,1080,'r1080')">Full HD 1080p</button>
+      <button type="button" class="ob" id="btmr" onclick="tglTmr()">Timer: OFF</button>
+      <button type="button" class="ob on" id="bgrd" onclick="tglGrd()">Grid: ON</button>
+      <button type="button" class="ob" id="bmir" onclick="tglMir()">Mirror: OFF</button>
+      <button type="button" class="ob" onclick="alert('Ketuk titik 3 Chrome -> Unduh')">Offline</button>
+    </div>
+  </div>
 
-      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-        st.innerText = 'Browser tidak mendukung kamera atau wajib HTTPS.';
-        return;
-      }
+  <div class="bot">
+    <div class="lb">
+      <button type="button" class="lbtn on" onclick="setL(this,'ASLI','')">Asli</button>
+      <button type="button" class="lbtn" onclick="setL(this,'CANON G7X','contrast(1.08) saturate(1.22) sepia(0.16) brightness(1.05)')">Canon G7X</button>
+      <button type="button" class="lbtn" onclick="setL(this,'IPHONE 14','contrast(1.06) saturate(1.15) brightness(1.03)')">iPhone 14</button>
+      <button type="button" class="lbtn" onclick="setL(this,'WARM VINTAGE','contrast(1.12) saturate(1.18) sepia(0.28) brightness(1.02)')">Warm Vintage</button>
+      <button type="button" class="lbtn" onclick="setL(this,'TEAL ORANGE','contrast(1.18) saturate(1.3) hue-rotate(-10deg)')">Teal & Orange</button>
+      <button type="button" class="lbtn" onclick="setL(this,'CYBERPUNK','contrast(1.25) saturate(1.5) hue-rotate(25deg)')">Cyberpunk</button>
+      <button type="button" class="lbtn" onclick="setL(this,'B&W NOIR','grayscale(1) contrast(1.35)')">B&W Noir</button>
+    </div>
+    <div class="sh">
+      <button type="button" class="sb" onclick="tglPnl('ppro')">Manual Pro</button>
+      <button type="button" class="sht" onclick="snap()"></button>
+      <label class="sb">Import LUT<input type="file" accept=".cube" style="display:none" onchange="impL(this)"></label>
+    </div>
+  </div>
+</div>
 
-      if (stm) {
-        stm.getTracks().forEach(function(t) { t.stop(); });
-      }
-      fl = false;
-      document.getElementById('bfl').classList.remove('on');
+<script>
+var dir='environment',stm=null,lCss='',hdr=false,mir=false,fl=false,tmr=0,rw=1280,rh=720;
 
-      navigator.mediaDevices.getUserMedia({
-        video: { facingMode: { ideal: dir }, width: { ideal: rw }, height: { ideal: rh } },
-        audio: false
-      }).then(handleStream).catch(function() {
-        return navigator.mediaDevices.getUserMedia({ video: true, audio: false }).then(handleStream);
-      }).catch(function(e) {
-        st.innerText = 'Error: ' + e.name + ' - ' + e.message;
-      });
-    }
+function bukaKamera(){
+  var st=document.getElementById('st');
+  st.innerText='Menghubungkan kamera...';
+  if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){
+    st.innerText='Browser tidak mendukung kamera.';
+    return;
+  }
+  if(stm){stm.getTracks().forEach(function(t){t.stop()})}
+  fl=false;
+  document.getElementById('bfl').classList.remove('on');
+  navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:dir},width:{ideal:rw},height:{ideal:rh}},audio:false})
+  .then(sukses)
+  .catch(function(){return navigator.mediaDevices.getUserMedia({video:true,audio:false}).then(sukses)})
+  .catch(function(e){st.innerText='Ditolak/Gagal: '+e.name+' ('+e.message+')'});
+}
 
-    function handleStream(s) {
-      stm = s;
-      var v = document.getElementById('vid');
-      v.srcObject = s;
-      v.play();
-      document.getElementById('overlay').style.display = 'none';
-      v.onloadedmetadata = function() {
-        document.getElementById('res').innerText = 'RES: ' + v.videoWidth + 'x' + v.videoHeight;
-      };
-    }
+function sukses(s){
+  stm=s;
+  var v=document.getElementById('vid');
+  v.srcObject=s;
+  v.play();
+  document.getElementById('ov').style.display='none';
+  v.onloadedmetadata=function(){document.getElementById('res').innerText='RES: '+v.videoWidth+'x'+v.videoHeight};
+}
 
-    function setR(w, h, id) {
-      rw = w; rh = h;
-      document.getElementById('r720').classList.remove('on');
-      document.getElementById('r1080').classList.remove('on');
-      document.getElementById(id).classList.add('on');
-      startCam();
-    }
+function setR(w,h,id){
+  rw=w;rh=h;
+  document.getElementById('r720').classList.remove('on');
+  document.getElementById('r1080').classList.remove('on');
+  document.getElementById(id).classList.add('on');
+  bukaKamera();
+}
 
-    function flipCam() {
-      dir = (dir === 'environment') ? 'user' : 'environment';
-      mir = (dir === 'user');
-      document.getElementById('vid').style.transform = mir ? 'scaleX(-1)' : 'scaleX(1)';
-      document.getElementById('bmir').innerText = mir ? 'Mirror: ON' : 'Mirror: OFF';
-      startCam();
-    }
+function flipCam(){
+  dir=(dir==='environment')?'user':'environment';
+  mir=(dir==='user');
+  document.getElementById('vid').style.transform=mir?'scaleX(-1)':'scaleX(1)';
+  document.getElementById('bmir').innerText=mir?'Mirror: ON':'Mirror: OFF';
+  bukaKamera();
+}
 
-    function tglFlash() {
-      if (!stm) return;
+function tglFlash(){
+  if(!stm)return;
+  var tr=stm.getVideoTracks().shift();
+  if(!tr||!tr.getCapabilities||!tr.getCapabilities().torch){alert('Flash tidak didukung');return}
+  fl=!fl;
+  tr.applyConstraints({advanced:[{torch:fl}]}).then(function(){document.getElementById('bfl').classList.toggle('on',fl)});
+}
+
+function tglHDR(){
+  hdr=!hdr;
+  var b=document.getElementById('bhdr');
+  b.innerText=hdr?'HDR: ON':'HDR: OFF';
+  b.classList.toggle('on',hdr);
+  updF();
+}
+
+function setL(el,n,c){
+  document.querySelectorAll('.lbtn').forEach(function(b){b.classList.remove('on')});
+  el.classList.add('on');
+  document.getElementById('ilut').innerText='LUT: '+n;
+  lCss=c;
+  updF();
+}
+
+function updF(){
+  var e=document.getElementById('exp').value,c=document.getElementById('con').value,s=document.getElementById('sat').value,w=document.getElementById('wrm').value;
+  var h=hdr?' contrast(1.12) saturate(1.15)':'';
+  document.getElementById('vid').style.filter=lCss+' brightness('+(e/100)+') contrast('+(c/100)+') saturate('+(s/100)+') sepia('+(w/100)+')'+h;
+}
+
+function rstPro(){
+  document.getElementById('exp').value=100;document.getElementById('con').value=100;document.getElementById('sat').value=100;document.getElementById('wrm').value=0;updF();
+}
+
+function tglPnl(id){
+  var p=document.getElementById(id),v=p.style.display==='flex';
