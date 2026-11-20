@@ -1,347 +1,469 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<meta name="theme-color" content="#000000">
-<meta name="mobile-web-app-capable" content="yes">
-<title>WinaCam Pro 4K</title>
-<link rel="manifest" id="man">
-<style>
-*{box-sizing:border-box;margin:0;padding:0;font-family:sans-serif;-webkit-tap-highlight-color:transparent}
-html,body{background:#000;color:#fff;overflow:hidden;height:100dvh;width:100vw}
-#view{position:relative;width:100%;height:100%}
-video{width:100%;height:100%;object-fit:cover}
-canvas{display:none}
-#ov{position:fixed;inset:0;z-index:999;background:#000;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:14px;padding:20px;text-align:center}
-.bm{background:#00a8ff;color:#fff;border:0;padding:18px 30px;border-radius:12px;font-size:16px;font-weight:bold}
-.top{position:absolute;top:10px;left:10px;right:10px;z-index:20;display:flex;flex-direction:column;gap:8px}
-.row{display:flex;justify-content:space-between;align-items:center;gap:6px}
-.bg{background:rgba(0,0,0,.72);padding:6px 10px;border-radius:8px;border:1px solid #444;font-size:11px;display:flex;align-items:center;gap:6px}
-.bt{background:rgba(0,0,0,.75);border:1px solid #555;color:#fff;border-radius:8px;padding:6px 9px;font-size:11px;font-weight:bold}
-.bt.on{background:#00a8ff;border-color:#00a8ff}
-.hdr.on{background:#ff9f1c;border-color:#ff9f1c;color:#000}
-.bb{background:#00a8ff;border:0;color:#fff;border-radius:5px;padding:4px 8px;font-size:11px;font-weight:bold}
-.grid{position:absolute;inset:0;pointer-events:none;z-index:10;background-image:linear-gradient(to right,rgba(255,255,255,.25) 1px,transparent 1px),linear-gradient(to bottom,rgba(255,255,255,.25) 1px,transparent 1px);background-size:33.33% 33.33%}
-.pnl{position:absolute;bottom:175px;left:12px;right:12px;z-index:40;background:rgba(18,18,18,.96);border:1px solid #444;border-radius:14px;padding:14px;display:none;flex-direction:column;gap:10px}
-.pt{font-size:12px;font-weight:bold;color:#00a8ff;display:flex;justify-content:space-between}
-.sr{display:flex;flex-direction:column;gap:3px;font-size:11px}
-input[type=range]{width:100%;accent-color:#00a8ff}
-.og{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-.ob{background:rgba(255,255,255,.12);border:1px solid #444;color:#fff;padding:8px;border-radius:8px;font-size:11px}
-.ob.on{background:#00a8ff;border-color:#00a8ff;font-weight:bold}
-.bot{position:absolute;bottom:0;left:0;right:0;z-index:30;background:linear-gradient(transparent,rgba(0,0,0,.96));padding:10px 14px 22px;display:flex;flex-direction:column;gap:10px}
-.lb{display:flex;gap:8px;overflow-x:auto;padding-bottom:2px}
-.lb::-webkit-scrollbar{display:none}
-.lbtn{background:#222;color:#fff;border:1px solid #555;padding:6px 12px;border-radius:18px;font-size:12px;white-space:nowrap}
-.lbtn.on{background:#00a8ff;border-color:#00a8ff;font-weight:bold}
-.md{display:flex;justify-content:center;gap:16px;font-size:12px;font-weight:bold}
-.md span{padding:4px 12px;border-radius:12px;color:#aaa}
-.md span.on{background:rgba(255,255,255,.2);color:#fff}
-.sh{display:flex;justify-content:space-between;align-items:center;padding:0 6px}
-.sht{width:64px;height:64px;border-radius:50%;background:#fff;border:4px solid #888;transition:.15s}
-.sht.vid{background:#ff3b30;border-color:#fff}
-.sht.rec{border-radius:16px;transform:scale(.85)}
-.sb{background:rgba(255,255,255,.18);border:1px solid #555;color:#fff;padding:10px 12px;border-radius:10px;font-size:11px;font-weight:bold}
-#tm{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:80px;font-weight:bold;z-index:45;display:none}
-#rc{position:absolute;top:85px;left:50%;transform:translateX(-50%);background:#ff3b30;padding:4px 12px;border-radius:12px;font-size:12px;font-weight:bold;display:none;z-index:35}
-</style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Pro AI Camera + LUT & Manual Controls</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, sans-serif; }
+    body { background: #0d0d0d; color: #fff; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+
+    /* Header Info */
+    .top-bar {
+      display: flex; justify-content: space-between; align-items: center; gap: 6px;
+      padding: 8px 12px; background: rgba(0, 0, 0, 0.85); font-size: 11px; z-index: 10;
+      border-bottom: 1px solid #222;
+    }
+    .badge { background: #1e1e1e; padding: 4px 8px; border-radius: 6px; border: 1px solid #333; white-space: nowrap; }
+    .ai-status { color: #00e676; font-weight: 600; font-size: 11px; text-align: center; }
+
+    /* Viewport Kamera */
+    .camera-container {
+      position: relative; flex: 1; background: #050505; display: flex;
+      flex-direction: column; justify-content: center; align-items: center; overflow: hidden;
+    }
+    video, #fallbackImage { width: 100%; height: 100%; object-fit: cover; transition: filter 0.2s ease; }
+    #fallbackImage { display: none; }
+
+    /* Grid Rule of Thirds */
+    .grid-overlay {
+      position: absolute; inset: 0; pointer-events: none;
+      background-image:
+        linear-gradient(to right, rgba(255,255,255,0.2) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(255,255,255,0.2) 1px, transparent 1px);
+      background-size: 33.33% 33.33%;
+    }
+    .grid-overlay.hidden { display: none; }
+
+    .start-box {
+      position: absolute; z-index: 5; display: flex; flex-direction: column;
+      align-items: center; gap: 10px; padding: 20px; text-align: center; max-width: 90%;
+    }
+    .start-btn {
+      background: #ff9100; color: #000; border: none; padding: 14px 22px;
+      border-radius: 30px; font-weight: bold; font-size: 14px; cursor: pointer;
+      box-shadow: 0 4px 15px rgba(255,145,0,0.4);
+    }
+    .alt-btn {
+      background: #222; color: #ddd; border: 1px solid #444; padding: 8px 14px;
+      border-radius: 20px; font-size: 12px; cursor: pointer;
+    }
+    .error-msg { color: #ff5252; font-size: 12px; margin-top: 6px; line-height: 1.4; }
+
+    /* Panel Kontrol Bawah */
+    .controls-wrapper {
+      background: #141414; padding: 8px 12px 16px; border-top: 1px solid #262626; z-index: 10;
+    }
+    .lut-header {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 6px; font-size: 11px; color: #bbb;
+    }
+    .lut-actions { display: flex; gap: 6px; }
+    .mini-btn {
+      background: #252525; color: #ff9100; border: 1px solid #3a3a3a;
+      padding: 3px 8px; border-radius: 6px; font-size: 10px; cursor: pointer;
+    }
+
+    /* Preset LUT */
+    .lut-scroll { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 8px; scrollbar-width: none; }
+    .lut-scroll::-webkit-scrollbar { display: none; }
+    .lut-btn {
+      background: #222; color: #ddd; border: 1px solid #333; padding: 5px 11px;
+      border-radius: 20px; font-size: 11px; white-space: nowrap; cursor: pointer;
+    }
+    .lut-btn.active { background: #ff9100; color: #000; border-color: #ff9100; font-weight: bold; }
+
+    /* Panel Kamera Manual Pro */
+    .manual-panel {
+      background: #1c1c1c; border-radius: 10px; padding: 8px 10px; margin-bottom: 10px;
+      border: 1px solid #2c2c2c;
+    }
+    .manual-tabs { display: flex; justify-content: space-between; gap: 4px; margin-bottom: 6px; }
+    .m-tab {
+      flex: 1; background: #262626; border: none; color: #aaa; padding: 5px 2px;
+      border-radius: 6px; font-size: 10px; cursor: pointer; text-align: center;
+    }
+    .m-tab.active { background: #383838; color: #ff9100; font-weight: bold; border: 1px solid #ff9100; }
+    .slider-box { display: flex; align-items: center; gap: 8px; }
+    .slider-box input[type="range"] { flex: 1; accent-color: #ff9100; }
+    .slider-val { font-size: 11px; width: 52px; text-align: right; color: #ff9100; font-family: monospace; }
+
+    /* Baris Aksi Utama (Lihat Foto, Shutter, Flip) */
+    .shutter-row { display: flex; justify-content: space-between; align-items: center; padding: 0 6px; }
+    .gallery-preview {
+      width: 48px; height: 48px; border-radius: 10px; background: #262626;
+      border: 2px solid #444; overflow: hidden; cursor: pointer; position: relative;
+      display: flex; justify-content: center; align-items: center; font-size: 10px; color: #888;
+    }
+    .gallery-preview img { width: 100%; height: 100%; object-fit: cover; }
+    .photo-count {
+      position: absolute; bottom: 2px; right: 2px; background: rgba(0,0,0,0.8);
+      color: #fff; font-size: 9px; padding: 1px 4px; border-radius: 4px;
+    }
+    .shutter-btn {
+      width: 62px; height: 62px; border-radius: 50%; background: #fff;
+      border: 4px solid #555; cursor: pointer; transition: transform 0.1s;
+    }
+    .shutter-btn:active { transform: scale(0.92); background: #ff9100; }
+    .side-actions { display: flex; gap: 6px; }
+    .icon-btn {
+      background: #262626; border: 1px solid #333; color: #fff; padding: 7px 9px;
+      border-radius: 8px; font-size: 11px; cursor: pointer;
+    }
+    .icon-btn.active { border-color: #00e676; color: #00e676; }
+
+    /* Modal Galeri Lihat Foto */
+    .modal {
+      display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.95);
+      z-index: 50; flex-direction: column; padding: 16px;
+    }
+    .modal.open { display: flex; }
+    .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+    .modal-body { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; overflow: hidden; }
+    .modal-body img { max-width: 100%; max-height: 62vh; border-radius: 8px; border: 1px solid #333; }
+    .thumb-strip { display: flex; gap: 8px; overflow-x: auto; padding: 10px 0; width: 100%; margin-top: 10px; }
+    .thumb-strip img {
+      width: 56px; height: 56px; object-fit: cover; border-radius: 6px;
+      border: 2px solid transparent; cursor: pointer; opacity: 0.6;
+    }
+    .thumb-strip img.selected { border-color: #ff9100; opacity: 1; }
+    .modal-actions { display: flex; gap: 12px; margin-top: 10px; }
+    .btn-download { background: #00e676; color: #000; border: none; padding: 10px 18px; border-radius: 8px; font-weight: bold; cursor: pointer; }
+    .btn-delete { background: #ff5252; color: #fff; border: none; padding: 10px 18px; border-radius: 8px; font-weight: bold; cursor: pointer; }
+  </style>
 </head>
 <body>
-<div id="view">
-  <video id="vid" playsinline muted></video>
-  <canvas id="cvs"></canvas>
-  <div class="grid" id="grid"></div>
-  <div id="tm">3</div>
-  <div id="rc">REC 00:00</div>
-
-  <div id="ov">
-    <button type="button" class="bm" onclick="bukaKamera()">Ketuk untuk Aktifkan Kamera</button>
-    <div id="st" style="color:#ffd166;font-size:13px">WinaCam Pro 16MP / 4K Siap</div>
+  <!-- Top Info -->
+  <div class="top-bar">
+    <span class="badge" id="resInfo">RES: -- | FPS: --</span>
+    <span class="ai-status" id="aiStatus">AI: Menunggu Kamera</span>
+    <div style="display:flex; gap:4px;">
+      <button class="icon-btn active" id="gridBtn">Grid: ON</button>
+      <button class="icon-btn" id="torchBtn">Torch: OFF</button>
+    </div>
   </div>
 
-  <div class="top">
-    <div class="row">
-      <div class="bg" id="res">16MP | 4K READY</div>
-      <div style="display:flex;gap:5px">
-        <button type="button" class="bt hdr" id="bhdr" onclick="tglHDR()">HDR: OFF</button>
-        <button type="button" class="bt" id="bfl" onclick="tglFlash()">Flash</button>
-        <button type="button" class="bt" onclick="flipCam()">Flip</button>
+  <!-- Camera Viewport -->
+  <div class="camera-container">
+    <div class="start-box" id="startBox">
+      <button class="start-btn" id="startCamBtn">📷 Ketuk untuk Aktifkan Kamera</button>
+      <button class="alt-btn" id="testImageBtn">🖼️ Mode Uji Coba (Tanpa Kamera)</button>
+      <div class="error-msg" id="errorMsg"></div>
+    </div>
+
+    <video id="video" autoplay playsinline muted></video>
+    <img id="fallbackImage" alt="Mode Uji Coba" />
+    <div class="grid-overlay" id="gridOverlay"></div>
+  </div>
+
+  <!-- Controls -->
+  <div class="controls-wrapper">
+    <!-- Baris Status LUT, Salin Preset & AI Auto-LUT -->
+    <div class="lut-header">
+      <span>LUT: <strong id="activeLutName" style="color:#fff;">ASLI</strong></span>
+      <div class="lut-actions">
+        <button class="mini-btn" id="aiAutoLutBtn">✨ AI Auto-LUT</button>
+        <button class="mini-btn" id="copyPresetBtn">📋 Salin Preset</button>
+        <label class="mini-btn" for="cubeInput" style="cursor:pointer;">+ Import .CUBE</label>
+        <input type="file" id="cubeInput" accept=".cube" style="display:none;" />
       </div>
     </div>
-    <div class="row">
-      <div class="bg"><span id="ilut">LUT: ASLI</span><button type="button" class="bb" onclick="copyP()">Salin</button></div>
-      <button type="button" class="bt" onclick="tglPnl('pset')">Setelan</button>
+
+    <!-- Pilihan LUT -->
+    <div class="lut-scroll" id="lutList">
+      <button class="lut-btn active" data-name="ASLI" data-filter="none">Asli</button>
+      <button class="lut-btn" data-name="Canon G7X" data-filter="contrast(1.15) saturate(1.25) brightness(1.05)">Canon G7X</button>
+      <button class="lut-btn" data-name="iPhone 14" data-filter="contrast(1.08) saturate(1.12) sepia(0.08)">iPhone 14</button>
+      <button class="lut-btn" data-name="Warm Vintage" data-filter="sepia(0.35) contrast(1.1) brightness(0.95)">Warm Vintage</button>
+      <button class="lut-btn" data-name="Teal & Orange" data-filter="contrast(1.25) saturate(1.3) hue-rotate(-12deg)">Teal & Orange</button>
+      <button class="lut-btn" data-name="Cyberpunk" data-filter="contrast(1.4) saturate(1.6) hue-rotate(25deg)">Cyberpunk</button>
+      <button class="lut-btn" data-name="B&W Noir" data-filter="grayscale(1) contrast(1.35)">B&W Noir</button>
+    </div>
+
+    <!-- Panel Kontrol Manual Pro -->
+    <div class="manual-panel">
+      <div class="manual-tabs">
+        <button class="m-tab active" data-param="ev">EV<br><span id="lbl-ev">0.0</span></button>
+        <button class="m-tab" data-param="iso">ISO<br><span id="lbl-iso">AUTO</span></button>
+        <button class="m-tab" data-param="shutter">SHUTTER<br><span id="lbl-shutter">1/60</span></button>
+        <button class="m-tab" data-param="wb">WB<br><span id="lbl-wb">5500K</span></button>
+        <button class="m-tab" data-param="zoom">ZOOM<br><span id="lbl-zoom">1.0x</span></button>
+      </div>
+      <div class="slider-box">
+        <input type="range" id="manualSlider" min="-2" max="2" step="0.1" value="0" />
+        <span class="slider-val" id="sliderValueText">0.0 EV</span>
+      </div>
+    </div>
+
+    <!-- Baris Shutter & Kolom Lihat Foto -->
+    <div class="shutter-row">
+      <!-- Kolom Lihat Foto -->
+      <div class="gallery-preview" id="openGalleryBtn" title="Lihat Foto">
+        <span id="emptyGalleryText">Foto</span>
+        <img id="lastPhotoThumb" style="display:none;" alt="Preview" />
+        <span class="photo-count" id="photoCount" style="display:none;">0</span>
+      </div>
+
+      <!-- Tombol Jepret -->
+      <button class="shutter-btn" id="captureBtn" title="Ambil Foto"></button>
+
+      <!-- Flip Cam & Reset Manual -->
+      <div class="side-actions">
+        <button class="icon-btn" id="resetManualBtn">Reset</button>
+        <button class="icon-btn" id="flipCamBtn">Flip Cam</button>
+      </div>
     </div>
   </div>
 
-  <div class="pnl" id="ppro">
-    <div class="pt"><span>MANUAL PRO</span><span style="color:#ffd166" onclick="rstPro()">Reset</span></div>
-    <div class="sr"><span>Exposure</span><input type="range" id="exp" min="50" max="160" value="100" oninput="updF()"></div>
-    <div class="sr"><span>Kontras</span><input type="range" id="con" min="60" max="160" value="100" oninput="updF()"></div>
-    <div class="sr"><span>Saturasi</span><input type="range" id="sat" min="0" max="180" value="100" oninput="updF()"></div>
-    <div class="sr"><span>Warmth</span><input type="range" id="wrm" min="0" max="50" value="0" oninput="updF()"></div>
-  </div>
-
-  <div class="pnl" id="pset">
-    <div class="pt"><span>UKURAN & SETELAN</span><span style="color:#ff6b6b" onclick="tglPnl('pset')">Tutup</span></div>
-    <div class="og">
-      <button type="button" class="ob on" id="m16" onclick="setMP(4608,3456,'m16','16MP')">Foto 16MP</button>
-      <button type="button" class="ob" id="m12" onclick="setMP(4000,3000,'m12','12MP')">Foto 12MP</button>
-      <button type="button" class="ob on" id="v4k" onclick="setVR(3840,2160,'v4k','4K')">Video 4K</button>
-      <button type="button" class="ob" id="vhd" onclick="setVR(1920,1080,'vhd','1080p')">Video 1080p</button>
-      <button type="button" class="ob" id="btmr" onclick="tglTmr()">Timer: OFF</button>
-      <button type="button" class="ob on" id="bgrd" onclick="tglGrd()">Grid: ON</button>
-      <button type="button" class="ob" id="bmir" onclick="tglMir()">Mirror: OFF</button>
-      <button type="button" class="ob" style="background:#00a8ff;font-weight:bold" onclick="pasangApp()">Install Aplikasi</button>
+  <!-- Modal Galeri Lihat Foto -->
+  <div class="modal" id="galleryModal">
+    <div class="modal-header">
+      <h3>Galeri Foto (<span id="modalPhotoIndex">0/0</span>)</h3>
+      <button class="icon-btn" id="closeGalleryBtn">✕ Tutup</button>
+    </div>
+    <div class="modal-body">
+      <img id="modalMainImage" src="" alt="Hasil Foto" />
+      <div class="modal-actions">
+        <button class="btn-download" id="downloadPhotoBtn">⬇ Simpan Foto</button>
+        <button class="btn-delete" id="deletePhotoBtn">🗑 Hapus</button>
+      </div>
+      <div class="thumb-strip" id="thumbStrip"></div>
     </div>
   </div>
 
-  <div class="bot">
-    <div class="lb">
-      <button type="button" class="lbtn on" onclick="setL(this,'ASLI','')">Asli</button>
-      <button type="button" class="lbtn" onclick="setL(this,'CANON G7X','contrast(1.08) saturate(1.22) sepia(0.16) brightness(1.05)')">Canon G7X</button>
-      <button type="button" class="lbtn" onclick="setL(this,'IPHONE 14','contrast(1.06) saturate(1.15) brightness(1.03)')">iPhone 14</button>
-      <button type="button" class="lbtn" onclick="setL(this,'WARM VINTAGE','contrast(1.12) saturate(1.18) sepia(0.28) brightness(1.02)')">Warm Vintage</button>
-      <button type="button" class="lbtn" onclick="setL(this,'TEAL ORANGE','contrast(1.18) saturate(1.3) hue-rotate(-10deg)')">Teal & Orange</button>
-      <button type="button" class="lbtn" onclick="setL(this,'CYBERPUNK','contrast(1.25) saturate(1.5) hue-rotate(25deg)')">Cyberpunk</button>
-      <button type="button" class="lbtn" onclick="setL(this,'B&W NOIR','grayscale(1) contrast(1.35)')">B&W Noir</button>
-    </div>
-    <div class="md">
-      <span id="mfoto" class="on" onclick="setMode('foto')">FOTO</span>
-      <span id="mvid" onclick="setMode('video')">VIDEO 4K</span>
-    </div>
-    <div class="sh">
-      <button type="button" class="sb" onclick="tglPnl('ppro')">Manual Pro</button>
-      <button type="button" class="sht" id="bsh" onclick="aksiUtama()"></button>
-      <label class="sb">Import LUT<input type="file" accept=".cube" style="display:none" onchange="impL(this)"></label>
-    </div>
-  </div>
-</div>
-<script>
-var dir='environment',stm=null,lCss='',hdr=false,mir=false,fl=false,tmr=0;
-var mode='foto',mpW=4608,mpH=3456,mpL='16MP',vrW=3840,vrH=2160,vrL='4K';
-var rec=null,chunks=[],recInt=null,recSec=0,defPrompt=null,rafId=null;
+  <!-- Canvas & Input File Tersembunyi -->
+  <canvas id="canvas" style="display:none;"></canvas>
+  <input type="file" id="uploadTestFile" accept="image/*" style="display:none;" />
+   <script>
+    const video = document.getElementById('video');
+    const fallbackImage = document.getElementById('fallbackImage');
+    const canvas = document.getElementById('canvas');
+    const startBox = document.getElementById('startBox');
+    const startCamBtn = document.getElementById('startCamBtn');
+    const errorMsg = document.getElementById('errorMsg');
+    const captureBtn = document.getElementById('captureBtn');
+    const flipCamBtn = document.getElementById('flipCamBtn');
+    const torchBtn = document.getElementById('torchBtn');
+    const gridBtn = document.getElementById('gridBtn');
+    const gridOverlay = document.getElementById('gridOverlay');
+    const resInfo = document.getElementById('resInfo');
+    const aiStatus = document.getElementById('aiStatus');
+    const activeLutName = document.getElementById('activeLutName');
 
-function bukaKamera(){
-  var st=document.getElementById('st');
-  st.innerText='Membuka sensor kamera...';
-  if(stm){stm.getTracks().forEach(function(t){t.stop()})}
-  fl=false;
-  document.getElementById('bfl').classList.remove('on');
-  navigator.mediaDevices.getUserMedia({
-    video:{facingMode:{ideal:dir},width:{ideal:vrW},height:{ideal:vrH}},
-    audio:(mode==='video')
-  }).then(pasangVideo).catch(function(){
-    return navigator.mediaDevices.getUserMedia({video:true,audio:false}).then(pasangVideo);
-  }).catch(function(e){st.innerText='Gagal: '+e.name});
-}
+    let stream = null;
+    let isTestMode = false;
+    let useFrontCam = false;
+    let torchOn = false;
+    let currentLutFilter = 'none';
 
-function pasangVideo(s){
-  stm=s;
-  var v=document.getElementById('vid');
-  v.srcObject=s;
-  v.play();
-  document.getElementById('ov').style.display='none';
-  updInfo();
-}
+    const manualState = { ev: 0, iso: 100, shutter: 60, wb: 5500, zoom: 1.0 };
+    let activeParam = 'ev';
+    let capturedPhotos = [];
+    let selectedPhotoIndex = 0;
 
-function updInfo(){
-  document.getElementById('res').innerText='FOTO '+mpL+' | VID '+vrL;
-}
+    // 1. Buka Kamera dengan Multi-Fallback (Anti Gagal)
+    async function startCamera() {
+      errorMsg.textContent = '';
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        errorMsg.innerHTML = 'Browser memblokir akses kamera karena halaman tidak dibuka lewat <b>HTTPS</b> atau <b>localhost</b>. Gunakan tombol <b>Mode Uji Coba</b> di atas atau buka via Live Server.';
+        return;
+      }
 
-function setMP(w,h,id,lbl){
-  mpW=w;mpH=h;mpL=lbl;
-  document.getElementById('m16').classList.remove('on');
-  document.getElementById('m12').classList.remove('on');
-  document.getElementById(id).classList.add('on');
-  updInfo();
-}
+      if (stream) {
+        stream.getTracks().forEach(t => t.stop());
+      }
 
-function setVR(w,h,id,lbl){
-  vrW=w;vrH=h;vrL=lbl;
-  document.getElementById('v4k').classList.remove('on');
-  document.getElementById('vhd').classList.remove('on');
-  document.getElementById(id).classList.add('on');
-  updInfo();
-  if(stm)bukaKamera();
-}
+      const facing = useFrontCam ? 'user' : 'environment';
+      const constraintsList = [
+        { video: { facingMode: { exact: facing }, width: { ideal: 1920 }, height: { ideal: 1080 } }, audio: false },
+        { video: { facingMode: facing }, audio: false },
+        { video: true, audio: false }
+      ];
 
-function setMode(m){
-  if(rec&&rec.state==='recording')return;
-  mode=m;
-  document.getElementById('mfoto').classList.toggle('on',m==='foto');
-  document.getElementById('mvid').classList.toggle('on',m==='video');
-  document.getElementById('bsh').classList.toggle('vid',m==='video');
-  bukaKamera();
-}
+      let lastErr = null;
+      for (const constraints of constraintsList) {
+        try {
+          stream = await navigator.mediaDevices.getUserMedia(constraints);
+          break;
+        } catch (err) {
+          lastErr = err;
+        }
+      }
 
-function flipCam(){
-  dir=(dir==='environment')?'user':'environment';
-  mir=(dir==='user');
-  document.getElementById('vid').style.transform=mir?'scaleX(-1)':'scaleX(1)';
-  document.getElementById('bmir').innerText=mir?'Mirror: ON':'Mirror: OFF';
-  bukaKamera();
-}
+      if (!stream) {
+        errorMsg.innerHTML = `Kamera gagal dibuka (${lastErr ? lastErr.name : 'Error'}). Pastikan izin kamera di browser sudah <b>Izinkan/Allow</b>, atau gunakan <b>Mode Uji Coba</b>.`;
+        return;
+      }
 
-function tglFlash(){
-  if(!stm)return;
-  var tr=stm.getVideoTracks().shift();
-  if(!tr||!tr.getCapabilities||!tr.getCapabilities().torch){alert('Flash tidak didukung');return}
-  fl=!fl;
-  tr.applyConstraints({advanced:[{torch:fl}]}).then(function(){document.getElementById('bfl').classList.toggle('on',fl)});
-}
+      isTestMode = false;
+      fallbackImage.style.display = 'none';
+      video.style.display = 'block';
+      video.srcObject = stream;
 
-function tglHDR(){
-  hdr=!hdr;
-  var b=document.getElementById('bhdr');
-  b.innerText=hdr?'HDR: ON':'HDR: OFF';
-  b.classList.toggle('on',hdr);
-  updF();
-}
+      try { await video.play(); } catch (e) {}
 
-function setL(el,n,c){
-  document.querySelectorAll('.lbtn').forEach(function(b){b.classList.remove('on')});
-  el.classList.add('on');
-  document.getElementById('ilut').innerText='LUT: '+n;
-  lCss=c;
-  updF();
-}
+      startBox.style.display = 'none';
+      const track = stream.getVideoTracks()[0];
+      const settings = track.getSettings ? track.getSettings() : {};
+      const w = settings.width || video.videoWidth || 1280;
+      const h = settings.height || video.videoHeight || 720;
+      const fps = settings.frameRate ? Math.round(settings.frameRate) : 30;
+      resInfo.textContent = `RES: ${w}x${h} | FPS: ${fps}`;
+      aiStatus.textContent = 'AI: Menganalisis Scene...';
+      setTimeout(() => { aiStatus.textContent = 'AI: Scene Optimal'; }, 1500);
+    }
 
-function updF(){
-  var e=document.getElementById('exp').value,c=document.getElementById('con').value,s=document.getElementById('sat').value,w=document.getElementById('wrm').value;
-  var h=hdr?' contrast(1.12) saturate(1.15)':'';
-  document.getElementById('vid').style.filter=lCss+' brightness('+(e/100)+') contrast('+(c/100)+') saturate('+(s/100)+') sepia('+(w/100)+')'+h;
-}
+    startCamBtn.addEventListener('click', startCamera);
+    flipCamBtn.addEventListener('click', () => {
+      if (isTestMode) return;
+      useFrontCam = !useFrontCam;
+      startCamera();
+    });
 
-function rstPro(){
-  document.getElementById('exp').value=100;document.getElementById('con').value=100;document.getElementById('sat').value=100;document.getElementById('wrm').value=0;updF();
-}
+    // Mode Uji Coba jika kamera fisik tidak tersedia
+    document.getElementById('testImageBtn').addEventListener('click', () => {
+      document.getElementById('uploadTestFile').click();
+    });
+    document.getElementById('uploadTestFile').addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        isTestMode = true;
+        video.style.display = 'none';
+        fallbackImage.src = ev.target.result;
+        fallbackImage.style.display = 'block';
+        startBox.style.display = 'none';
+        resInfo.textContent = 'RES: SIMULASI | FPS: --';
+        aiStatus.textContent = 'AI: Mode Uji Coba';
+      };
+      reader.readAsDataURL(file);
+    });
 
-function tglPnl(id){
-  var p=document.getElementById(id),v=p.style.display==='flex';
-  document.getElementById('ppro').style.display='none';document.getElementById('pset').style.display='none';
-  p.style.display=v?'none':'flex';
-}
+    // Grid & Torch
+    gridBtn.addEventListener('click', () => {
+      gridOverlay.classList.toggle('hidden');
+      const isOn = !gridOverlay.classList.contains('hidden');
+      gridBtn.textContent = isOn ? 'Grid: ON' : 'Grid: OFF';
+      gridBtn.classList.toggle('active', isOn);
+    });
 
-function tglTmr(){
-  tmr=tmr===0?3:(tmr===3?5:0);
-  document.getElementById('btmr').innerText=tmr===0?'Timer: OFF':'Timer: '+tmr+'s';
-  document.getElementById('btmr').classList.toggle('on',tmr>0);
-}
+    torchBtn.addEventListener('click', async () => {
+      if (!stream) return;
+      const track = stream.getVideoTracks()[0];
+      const caps = track.getCapabilities ? track.getCapabilities() : {};
+      if (caps.torch) {
+        torchOn = !torchOn;
+        await track.applyConstraints({ advanced: [{ torch: torchOn }] });
+        torchBtn.textContent = `Torch: ${torchOn ? 'ON' : 'OFF'}`;
+        torchBtn.classList.toggle('active', torchOn);
+      } else {
+        alert('Perangkat/browser ini tidak mendukung kontrol Torch/Flash.');
+      }
+    });
 
-function tglGrd(){
-  var g=document.getElementById('grid'),on=g.style.display!=='none';
-  g.style.display=on?'none':'block';
-  document.getElementById('bgrd').innerText=on?'Grid: OFF':'Grid: ON';
-  document.getElementById('bgrd').classList.toggle('on',!on);
-}
+    // 2. Terapkan LUT + Kontrol Manual Pro
+    function applyCameraEffects() {
+      const brightnessVal = 1 + (manualState.ev * 0.25) + ((manualState.iso - 100) / 6000);
+      const wbWarmth = (manualState.wb - 5500) / 10000;
+      const sepiaAmt = wbWarmth > 0 ? Math.min(wbWarmth, 0.4) : 0;
+      const hueAmt = wbWarmth < 0 ? wbWarmth * 40 : 0;
 
-function tglMir(){
-  mir=!mir;
-  document.getElementById('vid').style.transform=mir?'scaleX(-1)':'scaleX(1)';
-  document.getElementById('bmir').innerText=mir?'Mirror: ON':'Mirror: OFF';
-  document.getElementById('bmir').classList.toggle('on',mir);
-}
+      const manualFilter = `brightness(${brightnessVal.toFixed(2)}) sepia(${sepiaAmt.toFixed(2)}) hue-rotate(${hueAmt.toFixed(0)}deg)`;
+      const combinedFilter = currentLutFilter === 'none' ? manualFilter : `${currentLutFilter} ${manualFilter}`;
 
-function copyP(){
-  if(navigator.clipboard)navigator.clipboard.writeText(document.getElementById('ilut').innerText).then(function(){alert('Preset disalin')});
-}
+      const targetEl = isTestMode ? fallbackImage : video;
+      targetEl.style.filter = combinedFilter;
+      targetEl.style.transform = `scale(${manualState.zoom})`;
 
-function impL(i){
-  if(i.files&&i.files.length>0){
-    var f=i.files.item(0);
-    document.getElementById('ilut').innerText='LUT: '+f.name.replace('.cube','').toUpperCase();
-    lCss='contrast(1.12) saturate(1.25)';updF();
-  }
-}
+      if (stream) {
+        const track = stream.getVideoTracks()[0];
+        const caps = track.getCapabilities ? track.getCapabilities() : {};
+        const adv = {};
+        if (caps.zoom) adv.zoom = Math.min(Math.max(manualState.zoom, caps.zoom.min), caps.zoom.max);
+        if (caps.exposureCompensation) {
+          adv.exposureCompensation = Math.min(Math.max(manualState.ev, caps.exposureCompensation.min), caps.exposureCompensation.max);
+        }
+        if (Object.keys(adv).length > 0) track.applyConstraints({ advanced: [adv] }).catch(() => {});
+      }
+    }
 
-function aksiUtama(){
-  if(mode==='video'){
-    if(rec&&rec.state==='recording'){stopVideo()}else{mulaiVideo()}
-    return;
-  }
-  if(tmr>0){
-    var c=tmr,el=document.getElementById('tm');el.style.display='block';el.innerText=c;
-    var iv=setInterval(function(){c--;if(c<=0){clearInterval(iv);el.style.display='none';simpanFoto()}else{el.innerText=c}},1000);
-  }else{simpanFoto()}
-}
+    // Pilihan LUT
+    function bindLutButtons() {
+      document.querySelectorAll('.lut-btn').forEach(btn => {
+        btn.onclick = () => {
+          document.querySelectorAll('.lut-btn').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          currentLutFilter = btn.dataset.filter;
+          activeLutName.textContent = btn.dataset.name;
+          applyCameraEffects();
+        };
+      });
+    }
+    bindLutButtons();
 
-function simpanFoto(){
-  var v=document.getElementById('vid'),c=document.getElementById('cvs');
-  if(!v.videoWidth)return;
-  var isPortrait=v.videoHeight>v.videoWidth;
-  c.width=isPortrait?mpH:mpW;
-  c.height=isPortrait?mpW:mpH;
-  var x=c.getContext('2d');
-  x.imageSmoothingEnabled=true;
-  x.imageSmoothingQuality='high';
-  x.filter=getComputedStyle(v).filter;
-  if(mir){x.translate(c.width,0);x.scale(-1,1)}
-  x.drawImage(v,0,0,c.width,c.height);
-  var a=document.createElement('a');
-  a.download='WinaCam_'+mpL+'_'+Date.now()+'.jpg';
-  a.href=c.toDataURL('image/jpeg',0.96);
-  a.click();
-}
+    // Import .CUBE
+    document.getElementById('cubeInput').addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        const lines = ev.target.result.split('\n');
+        let rSum = 0, gSum = 0, bSum = 0, count = 0;
+        for (const line of lines) {
+          const parts = line.trim().split(/\s+/);
+          if (parts.length === 3 && !isNaN(parts[0]) && !isNaN(parts[1]) && !isNaN(parts[2])) {
+            rSum += parseFloat(parts[0]);
+            gSum += parseFloat(parts[1]);
+            bSum += parseFloat(parts[2]);
+            count++;
+          }
+        }
+        const avgR = count ? rSum / count : 0.5;
+        const avgB = count ? bSum / count : 0.5;
+        const warmth = Math.max(0, (avgR - avgB) * 0.6);
+        const hue = (avgB - avgR) * 35;
+        const customFilter = `contrast(1.18) saturate(1.22) sepia(${warmth.toFixed(2)}) hue-rotate(${hue.toFixed(0)}deg)`;
+        const lutName = file.name.replace(/\.cube$/i, '').slice(0, 14);
 
-function mulaiVideo(){
-  var v=document.getElementById('vid'),c=document.getElementById('cvs');
-  if(!v.videoWidth)return;
-  var isPortrait=v.videoHeight>v.videoWidth;
-  c.width=isPortrait?vrH:vrW;
-  c.height=isPortrait?vrW:vrH;
-  var x=c.getContext('2d');
-  function gambarFrame(){
-    x.save();
-    x.filter=getComputedStyle(v).filter;
-    if(mir){x.translate(c.width,0);x.scale(-1,1)}
-    x.drawImage(v,0,0,c.width,c.height);
-    x.restore();
-    rafId=requestAnimationFrame(gambarFrame);
-  }
-  gambarFrame();
-  var cStm=c.captureStream(30);
-  if(stm&&stm.getAudioTracks().length>0){cStm.addTrack(stm.getAudioTracks().shift())}
-  chunks=[];
-  rec=new MediaRecorder(cStm,{videoBitsPerSecond:20000000});
-  rec.ondataavailable=function(e){if(e.data.size>0)chunks.push(e.data)};
-  rec.onstop=function(){
-    cancelAnimationFrame(rafId);
-    var blob=new Blob(chunks,{type:'video/mp4'});
-    var a=document.createElement('a');
-    a.download='WinaCam_'+vrL+'_'+Date.now()+'.mp4';
-    a.href=URL.createObjectURL(blob);
-    a.click();
-  };
-  rec.start();
-  document.getElementById('bsh').classList.add('rec');
-  var rc=document.getElementById('rc');
-  rc.style.display='block';recSec=0;rc.innerText='REC 00:00';
-  recInt=setInterval(function(){
-    recSec++;
-    var m=String(Math.floor(recSec/60)).padStart(2,'0'),s=String(recSec%60).padStart(2,'0');
-    rc.innerText='REC '+m+':'+s;
-  },1000);
-}
+        const newBtn = document.createElement('button');
+        newBtn.className = 'lut-btn';
+        newBtn.dataset.name = lutName;
+        newBtn.dataset.filter = customFilter;
+        newBtn.textContent = lutName;
+        document.getElementById('lutList').appendChild(newBtn);
+        bindLutButtons();
+        newBtn.click();
+      };
+      reader.readAsText(file);
+    });
 
-function stopVideo(){
-  if(rec&&rec.state==='recording')rec.stop();
-  clearInterval(recInt);
-  document.getElementById('bsh').classList.remove('rec');
-  document.getElementById('rc').style.display='none';
-}
+    // AI Auto-LUT
+    document.getElementById('aiAutoLutBtn').addEventListener('click', () => {
+      aiStatus.textContent = 'AI: Menganalisis Scene...';
+      setTimeout(() => {
+        const btns = Array.from(document.querySelectorAll('.lut-btn')).slice(1);
+        const pick = btns[Math.floor(Math.random() * btns.length)];
+        pick.click();
+        aiStatus.textContent = `AI: Rekomendasi ${pick.dataset.name}`;
+      }, 600);
+    });
 
-function pasangApp(){
-  if(defPrompt){defPrompt.prompt();defPrompt=null}
-  else{alert('Ketuk titik tiga (⋮) di pojok kanan atas Chrome -> pilih "Tambahkan ke layar utama" atau "Instal aplikasi".')}
-}
-window.addEventListener('beforeinstallprompt',function(e){e.preventDefault();defPrompt=e});
-(function(){
-  var ic="data:image/svg+xml,<svg xmlns='http://w3.org' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%2300a8ff'/><circle cx='50' cy='50' r='26' fill='white'/></svg>";
-  var m={name:"WinaCam Pro 4K",short_name:"WinaCam",start_url:location.href,display:"standalone",background_color:"#000000",theme_color:"#000000",icons:[{src:ic,sizes:"192x192",type:"image/svg+xml"}]};
-  document.getElementById('man').setAttribute('href','data:application/manifest+json,'+encodeURIComponent(JSON.stringify(m)));
-})();
-</script>
-</body>
-</html>
+    // Salin Preset
+    document.getElementById('copyPresetBtn').addEventListener('click', () => {
+      const presetText = `Pro AI Camera Preset | LUT: ${activeLutName.textContent} | EV: ${manualState.ev} | ISO: ${manualState.iso} | Shutter: 1/${manualState.shutter} | WB: ${manualState.wb}K | Zoom: ${manualState.zoom}x`;
+      navigator.clipboard.writeText(presetText).then(() => {
+        alert('Preset disalin ke clipboard:\n' + presetText);
+      });
+    });
+
+    // Tab Kontrol Manual Pro
+    const slider = document.getElementById('manualSlider');
+    const sliderValueText = document.getElementById('sliderValueText');
+    const paramConfigs = {
+      ev:      { min: -2,   max: 2,    step: 0.1, format: v => `${v > 0 ? '+' : ''}${parseFloat(v).toFixed(1)} EV`, lbl: 'lbl-ev' },
+      iso:     { min: 100,  max: 3200, step: 100, format: v => `${v}`, lbl: 'lbl-iso' },
+      shutter: { min: 15,   max: 1000, step: 15,  format: v => `1/${v}s`, lbl: 'lbl-shutter' },
+      wb:      { min: 2800, max: 8000, step: 100, format: v => `${v}K`, lbl: 'lbl-wb' },
+      zoom:    { min: 1,    max: 4,    step: 0.1, format: v => `${parseFloat(v).toFixed(1)}x`, lbl: 'lbl-zoom' }
+     
