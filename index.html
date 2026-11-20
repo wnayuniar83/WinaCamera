@@ -3,31 +3,24 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>Pro AI Camera + LUT & Manual Controls</title>
+  <title>Pro AI Camera</title>
   <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, sans-serif; }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: sans-serif; }
     body {
       background: #0d0d0d; color: #fff; display: flex; flex-direction: column;
       height: 100vh; height: 100dvh; overflow: hidden;
     }
-
-    /* Header Info */
     .top-bar {
       display: flex; justify-content: space-between; align-items: center; gap: 6px;
-      padding: 8px 12px; background: rgba(0, 0, 0, 0.85); font-size: 11px; z-index: 10;
-      border-bottom: 1px solid #222; flex-shrink: 0;
+      padding: 8px 12px; background: #000; font-size: 11px; border-bottom: 1px solid #222;
     }
-    .badge { background: #1e1e1e; padding: 4px 8px; border-radius: 6px; border: 1px solid #333; white-space: nowrap; }
-    .ai-status { color: #00e676; font-weight: 600; font-size: 11px; text-align: center; }
-
-    /* Viewport Kamera */
+    .badge { background: #1e1e1e; padding: 4px 8px; border-radius: 6px; border: 1px solid #333; }
+    .ai-status { color: #00e676; font-weight: bold; }
     .camera-container {
-      position: relative; flex: 1; min-height: 0; background: #050505; display: flex;
-      flex-direction: column; justify-content: center; align-items: center; overflow: hidden;
+      position: relative; flex: 1; min-height: 0; background: #050505;
+      display: flex; justify-content: center; align-items: center; overflow: hidden;
     }
-    video { width: 100%; height: 100%; object-fit: cover; transition: filter 0.2s ease; }
-
-    /* Grid Rule of Thirds */
+    video { width: 100%; height: 100%; object-fit: cover; }
     .grid-overlay {
       position: absolute; inset: 0; pointer-events: none;
       background-image:
@@ -36,22 +29,17 @@
       background-size: 33.33% 33.33%;
     }
     .grid-overlay.hidden { display: none; }
-
     .start-box {
-      position: absolute; z-index: 5; display: flex; flex-direction: column;
-      align-items: center; gap: 10px; padding: 20px; text-align: center; max-width: 90%;
+      position: absolute; z-index: 20; display: flex; flex-direction: column;
+      align-items: center; gap: 10px; padding: 20px; text-align: center;
     }
     .start-btn {
       background: #ff9100; color: #000; border: none; padding: 14px 24px;
       border-radius: 30px; font-weight: bold; font-size: 15px; cursor: pointer;
-      box-shadow: 0 4px 15px rgba(255,145,0,0.4);
     }
-    .error-msg { color: #ff5252; font-size: 12px; margin-top: 6px; line-height: 1.4; }
-
-    /* Panel Kontrol Bawah */
+    .error-msg { color: #ff5252; font-size: 12px; max-width: 280px; }
     .controls-wrapper {
-      background: #141414; padding: 8px 12px 14px; border-top: 1px solid #262626;
-      z-index: 10; flex-shrink: 0;
+      background: #141414; padding: 8px 12px 14px; border-top: 1px solid #262626; z-index: 20;
     }
     .lut-header {
       display: flex; justify-content: space-between; align-items: center;
@@ -60,34 +48,27 @@
     .lut-actions { display: flex; gap: 6px; }
     .mini-btn {
       background: #252525; color: #ff9100; border: 1px solid #3a3a3a;
-      padding: 3px 8px; border-radius: 6px; font-size: 10px; cursor: pointer;
+      padding: 4px 8px; border-radius: 6px; font-size: 10px; cursor: pointer;
     }
-
-    /* Preset LUT */
-    .lut-scroll { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 8px; scrollbar-width: none; }
-    .lut-scroll::-webkit-scrollbar { display: none; }
+    .lut-scroll { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 8px; }
     .lut-btn {
       background: #222; color: #ddd; border: 1px solid #333; padding: 5px 11px;
       border-radius: 20px; font-size: 11px; white-space: nowrap; cursor: pointer;
     }
     .lut-btn.active { background: #ff9100; color: #000; border-color: #ff9100; font-weight: bold; }
-
-    /* Panel Kamera Manual Pro */
     .manual-panel {
-      background: #1c1c1c; border-radius: 10px; padding: 7px 10px; margin-bottom: 10px;
+      background: #1c1c1c; border-radius: 10px; padding: 8px 10px; margin-bottom: 10px;
       border: 1px solid #2c2c2c;
     }
-    .manual-tabs { display: flex; justify-content: space-between; gap: 4px; margin-bottom: 6px; }
+    .manual-tabs { display: flex; gap: 4px; margin-bottom: 6px; }
     .m-tab {
       flex: 1; background: #262626; border: none; color: #aaa; padding: 5px 2px;
       border-radius: 6px; font-size: 10px; cursor: pointer; text-align: center;
     }
     .m-tab.active { background: #383838; color: #ff9100; font-weight: bold; border: 1px solid #ff9100; }
     .slider-box { display: flex; align-items: center; gap: 8px; }
-    .slider-box input[type="range"] { flex: 1; accent-color: #ff9100; }
-    .slider-val { font-size: 11px; width: 52px; text-align: right; color: #ff9100; font-family: monospace; }
-
-    /* Baris Aksi Utama (Lihat Foto, Shutter, Flip) */
+    .slider-box input { flex: 1; accent-color: #ff9100; }
+    .slider-val { font-size: 11px; width: 52px; text-align: right; color: #ff9100; }
     .shutter-row { display: flex; justify-content: space-between; align-items: center; padding: 0 6px; }
     .gallery-preview {
       width: 48px; height: 48px; border-radius: 10px; background: #262626;
@@ -101,90 +82,77 @@
     }
     .shutter-btn {
       width: 58px; height: 58px; border-radius: 50%; background: #fff;
-      border: 4px solid #555; cursor: pointer; transition: transform 0.1s;
+      border: 4px solid #555; cursor: pointer;
     }
-    .shutter-btn:active { transform: scale(0.92); background: #ff9100; }
     .side-actions { display: flex; gap: 6px; }
     .icon-btn {
       background: #262626; border: 1px solid #333; color: #fff; padding: 7px 9px;
       border-radius: 8px; font-size: 11px; cursor: pointer;
     }
     .icon-btn.active { border-color: #00e676; color: #00e676; }
-
-    /* Modal Galeri Lihat Foto */
     .modal {
       display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.95);
       z-index: 50; flex-direction: column; padding: 16px;
     }
     .modal.open { display: flex; }
     .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
-    .modal-body { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; overflow: hidden; }
-    .modal-body img { max-width: 100%; max-height: 60vh; border-radius: 8px; border: 1px solid #333; }
+    .modal-body { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+    .modal-body img { max-width: 100%; max-height: 60vh; border-radius: 8px; }
     .thumb-strip { display: flex; gap: 8px; overflow-x: auto; padding: 10px 0; width: 100%; margin-top: 10px; }
-    .thumb-strip img {
-      width: 56px; height: 56px; object-fit: cover; border-radius: 6px;
-      border: 2px solid transparent; cursor: pointer; opacity: 0.6;
-    }
-    .thumb-strip img.selected { border-color: #ff9100; opacity: 1; }
+    .thumb-strip img { width: 56px; height: 56px; object-fit: cover; border-radius: 6px; opacity: 0.6; }
+    .thumb-strip img.selected { border: 2px solid #ff9100; opacity: 1; }
     .modal-actions { display: flex; gap: 12px; margin-top: 10px; }
-    .btn-download { background: #00e676; color: #000; border: none; padding: 10px 18px; border-radius: 8px; font-weight: bold; cursor: pointer; }
-    .btn-delete { background: #ff5252; color: #fff; border: none; padding: 10px 18px; border-radius: 8px; font-weight: bold; cursor: pointer; }
+    .btn-download { background: #00e676; color: #000; border: none; padding: 10px 18px; border-radius: 8px; font-weight: bold; }
+    .btn-delete { background: #ff5252; color: #fff; border: none; padding: 10px 18px; border-radius: 8px; font-weight: bold; }
   </style>
 </head>
 <body>
-  <!-- Top Info -->
   <div class="top-bar">
     <span class="badge" id="resInfo">RES: -- | FPS: --</span>
-    <span class="ai-status" id="aiStatus">AI: Menunggu Kamera</span>
+    <span class="ai-status" id="aiStatus">AI: Siap</span>
     <div style="display:flex; gap:4px;">
-      <button class="icon-btn active" id="gridBtn">Grid: ON</button>
-      <button class="icon-btn" id="torchBtn">Torch: OFF</button>
+      <button type="button" class="icon-btn active" id="gridBtn">Grid: ON</button>
+      <button type="button" class="icon-btn" id="torchBtn">Torch: OFF</button>
     </div>
   </div>
 
-  <!-- Camera Viewport -->
   <div class="camera-container">
     <div class="start-box" id="startBox">
-      <button class="start-btn" id="startCamBtn">📷 Ketuk untuk Aktifkan Kamera</button>
+      <button type="button" class="start-btn" id="startCamBtn">📷 Ketuk untuk Aktifkan Kamera</button>
       <div class="error-msg" id="errorMsg"></div>
     </div>
-
     <video id="video" autoplay playsinline muted></video>
     <div class="grid-overlay" id="gridOverlay"></div>
   </div>
 
-  <!-- Controls -->
   <div class="controls-wrapper">
-    <!-- Baris Status LUT, Salin Preset & AI Auto-LUT -->
     <div class="lut-header">
       <span>LUT: <strong id="activeLutName" style="color:#fff;">ASLI</strong></span>
       <div class="lut-actions">
-        <button class="mini-btn" id="aiAutoLutBtn">✨ AI Auto-LUT</button>
-        <button class="mini-btn" id="copyPresetBtn">📋 Salin Preset</button>
-        <label class="mini-btn" for="cubeInput" style="cursor:pointer;">+ Import .CUBE</label>
+        <button type="button" class="mini-btn" id="aiAutoLutBtn">✨ AI Auto-LUT</button>
+        <button type="button" class="mini-btn" id="copyPresetBtn">📋 Salin Preset</button>
+        <label class="mini-btn" for="cubeInput">+ Import .CUBE</label>
         <input type="file" id="cubeInput" accept=".cube" style="display:none;" />
       </div>
     </div>
 
-    <!-- Pilihan LUT -->
     <div class="lut-scroll" id="lutList">
-      <button class="lut-btn active" data-name="ASLI" data-filter="none">Asli</button>
-      <button class="lut-btn" data-name="Canon G7X" data-filter="contrast(1.15) saturate(1.25) brightness(1.05)">Canon G7X</button>
-      <button class="lut-btn" data-name="iPhone 14" data-filter="contrast(1.08) saturate(1.12) sepia(0.08)">iPhone 14</button>
-      <button class="lut-btn" data-name="Warm Vintage" data-filter="sepia(0.35) contrast(1.1) brightness(0.95)">Warm Vintage</button>
-      <button class="lut-btn" data-name="Teal & Orange" data-filter="contrast(1.25) saturate(1.3) hue-rotate(-12deg)">Teal & Orange</button>
-      <button class="lut-btn" data-name="Cyberpunk" data-filter="contrast(1.4) saturate(1.6) hue-rotate(25deg)">Cyberpunk</button>
-      <button class="lut-btn" data-name="B&W Noir" data-filter="grayscale(1) contrast(1.35)">B&W Noir</button>
+      <button type="button" class="lut-btn active" data-name="ASLI" data-filter="none">Asli</button>
+      <button type="button" class="lut-btn" data-name="Canon G7X" data-filter="contrast(1.15) saturate(1.25) brightness(1.05)">Canon G7X</button>
+      <button type="button" class="lut-btn" data-name="iPhone 14" data-filter="contrast(1.08) saturate(1.12) sepia(0.08)">iPhone 14</button>
+      <button type="button" class="lut-btn" data-name="Warm Vintage" data-filter="sepia(0.35) contrast(1.1) brightness(0.95)">Warm Vintage</button>
+      <button type="button" class="lut-btn" data-name="Teal & Orange" data-filter="contrast(1.25) saturate(1.3) hue-rotate(-12deg)">Teal & Orange</button>
+      <button type="button" class="lut-btn" data-name="Cyberpunk" data-filter="contrast(1.4) saturate(1.6) hue-rotate(25deg)">Cyberpunk</button>
+      <button type="button" class="lut-btn" data-name="B&W Noir" data-filter="grayscale(1) contrast(1.35)">B&W Noir</button>
     </div>
 
-    <!-- Panel Kontrol Manual Pro -->
     <div class="manual-panel">
       <div class="manual-tabs">
-        <button class="m-tab active" data-param="ev">EV<br><span id="lbl-ev">0.0</span></button>
-        <button class="m-tab" data-param="iso">ISO<br><span id="lbl-iso">AUTO</span></button>
-        <button class="m-tab" data-param="shutter">SHUTTER<br><span id="lbl-shutter">1/60</span></button>
-        <button class="m-tab" data-param="wb">WB<br><span id="lbl-wb">5500K</span></button>
-        <button class="m-tab" data-param="zoom">ZOOM<br><span id="lbl-zoom">1.0x</span></button>
+        <button type="button" class="m-tab active" data-param="ev">EV<br><span id="lbl-ev">0.0</span></button>
+        <button type="button" class="m-tab" data-param="iso">ISO<br><span id="lbl-iso">AUTO</span></button>
+        <button type="button" class="m-tab" data-param="shutter">SHUTTER<br><span id="lbl-shutter">1/60</span></button>
+        <button type="button" class="m-tab" data-param="wb">WB<br><span id="lbl-wb">5500K</span></button>
+        <button type="button" class="m-tab" data-param="zoom">ZOOM<br><span id="lbl-zoom">1.0x</span></button>
       </div>
       <div class="slider-box">
         <input type="range" id="manualSlider" min="-2" max="2" step="0.1" value="0" />
@@ -192,279 +160,290 @@
       </div>
     </div>
 
-    <!-- Baris Shutter & Kolom Lihat Foto -->
     <div class="shutter-row">
-      <!-- Kolom Lihat Foto -->
-      <div class="gallery-preview" id="openGalleryBtn" title="Lihat Foto">
+      <div class="gallery-preview" id="openGalleryBtn">
         <span id="emptyGalleryText">Foto</span>
         <img id="lastPhotoThumb" style="display:none;" alt="Preview" />
         <span class="photo-count" id="photoCount" style="display:none;">0</span>
       </div>
-
-      <!-- Tombol Jepret -->
-      <button class="shutter-btn" id="captureBtn" title="Ambil Foto"></button>
-
-      <!-- Flip Cam & Reset Manual -->
+      <button type="button" class="shutter-btn" id="captureBtn"></button>
       <div class="side-actions">
-        <button class="icon-btn" id="resetManualBtn">Reset</button>
-        <button class="icon-btn" id="flipCamBtn">Flip Cam</button>
+        <button type="button" class="icon-btn" id="resetManualBtn">Reset</button>
+        <button type="button" class="icon-btn" id="flipCamBtn">Flip Cam</button>
       </div>
     </div>
   </div>
 
-  <!-- Modal Galeri Lihat Foto -->
   <div class="modal" id="galleryModal">
     <div class="modal-header">
       <h3>Galeri Foto (<span id="modalPhotoIndex">0/0</span>)</h3>
-      <button class="icon-btn" id="closeGalleryBtn">✕ Tutup</button>
+      <button type="button" class="icon-btn" id="closeGalleryBtn">✕ Tutup</button>
     </div>
     <div class="modal-body">
       <img id="modalMainImage" src="" alt="Hasil Foto" />
       <div class="modal-actions">
-        <button class="btn-download" id="downloadPhotoBtn">⬇ Simpan Foto</button>
-        <button class="btn-delete" id="deletePhotoBtn">🗑 Hapus</button>
+        <button type="button" class="btn-download" id="downloadPhotoBtn">⬇ Simpan Foto</button>
+        <button type="button" class="btn-delete" id="deletePhotoBtn">🗑 Hapus</button>
       </div>
       <div class="thumb-strip" id="thumbStrip"></div>
     </div>
   </div>
 
   <canvas id="canvas" style="display:none;"></canvas>
-   <script>
-    const video = document.getElementById('video');
-    const canvas = document.getElementById('canvas');
-    const startBox = document.getElementById('startBox');
-    const startCamBtn = document.getElementById('startCamBtn');
-    const errorMsg = document.getElementById('errorMsg');
-    const captureBtn = document.getElementById('captureBtn');
-    const flipCamBtn = document.getElementById('flipCamBtn');
-    const torchBtn = document.getElementById('torchBtn');
-    const gridBtn = document.getElementById('gridBtn');
-    const gridOverlay = document.getElementById('gridOverlay');
-    const resInfo = document.getElementById('resInfo');
-    const aiStatus = document.getElementById('aiStatus');
-    const activeLutName = document.getElementById('activeLutName');
+    <script>
+    var video = document.getElementById('video');
+    var canvas = document.getElementById('canvas');
+    var startBox = document.getElementById('startBox');
+    var startCamBtn = document.getElementById('startCamBtn');
+    var errorMsg = document.getElementById('errorMsg');
+    var captureBtn = document.getElementById('captureBtn');
+    var flipCamBtn = document.getElementById('flipCamBtn');
+    var torchBtn = document.getElementById('torchBtn');
+    var gridBtn = document.getElementById('gridBtn');
+    var gridOverlay = document.getElementById('gridOverlay');
+    var resInfo = document.getElementById('resInfo');
+    var aiStatus = document.getElementById('aiStatus');
+    var activeLutName = document.getElementById('activeLutName');
 
-    let stream = null;
-    let useFrontCam = false;
-    let torchOn = false;
-    let currentLutFilter = 'none';
+    var stream = null;
+    var useFrontCam = false;
+    var torchOn = false;
+    var currentLutFilter = 'none';
 
-    const manualState = { ev: 0, iso: 100, shutter: 60, wb: 5500, zoom: 1.0 };
-    let activeParam = 'ev';
-    let capturedPhotos = [];
-    let selectedPhotoIndex = 0;
+    var manualState = { ev: 0, iso: 100, shutter: 60, wb: 5500, zoom: 1.0 };
+    var activeParam = 'ev';
+    var capturedPhotos = [];
+    var selectedPhotoIndex = 0;
 
-    async function startCamera() {
+    function startCamera() {
       startCamBtn.textContent = '⏳ Membuka Kamera...';
       errorMsg.textContent = '';
 
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
         startCamBtn.textContent = '📷 Ketuk untuk Aktifkan Kamera';
-        errorMsg.textContent = 'Browser tidak mendukung kamera. Gunakan Chrome terbaru.';
+        errorMsg.textContent = 'Browser tidak mendukung kamera.';
         return;
       }
 
       if (stream) {
-        stream.getTracks().forEach(t => t.stop());
+        stream.getTracks().forEach(function(t) { t.stop(); });
         stream = null;
       }
 
-      const facing = useFrontCam ? 'user' : 'environment';
-      const constraintsList = [
-        { video: { facingMode: { ideal: facing }, width: { ideal: 1920 }, height: { ideal: 1080 } }, audio: false },
-        { video: { facingMode: facing }, audio: false },
-        { video: true, audio: false }
-      ];
-
-      let lastErr = null;
-      for (const constraints of constraintsList) {
-        try {
-          stream = await navigator.mediaDevices.getUserMedia(constraints);
-          if (stream) break;
-        } catch (err) {
-          lastErr = err;
-        }
-      }
-
-      if (!stream) {
+      var facing = useFrontCam ? 'user' : 'environment';
+      navigator.mediaDevices.getUserMedia({
+        video: { facingMode: facing },
+        audio: false
+      }).then(function(mediaStream) {
+        stream = mediaStream;
+        video.srcObject = stream;
+        video.play();
+        startBox.style.display = 'none';
+        resInfo.textContent = 'RES: HD | FPS: 30';
+        aiStatus.textContent = 'AI: Scene Optimal';
+      }).catch(function(err) {
         startCamBtn.textContent = '📷 Ketuk untuk Aktifkan Kamera';
-        errorMsg.textContent = `Gagal (${lastErr ? lastErr.name : 'Ditolak'}). Buka Pengaturan Chrome > Izin Situs > Kamera > Izinkan.`;
-        return;
-      }
-
-      video.srcObject = stream;
-      video.setAttribute('playsinline', 'true');
-      video.muted = true;
-
-      try {
-        await video.play();
-      } catch (e) {
-        errorMsg.textContent = 'Gagal memutar video: ' + e.message;
-      }
-
-      startBox.style.display = 'none';
-      const track = stream.getVideoTracks().at(0);
-      const settings = track && track.getSettings ? track.getSettings() : {};
-      const w = settings.width || video.videoWidth || 1280;
-      const h = settings.height || video.videoHeight || 720;
-      const fps = settings.frameRate ? Math.round(settings.frameRate) : 30;
-
-      resInfo.textContent = `RES: ${w}x${h} | FPS: ${fps}`;
-      aiStatus.textContent = 'AI: Menganalisis Scene...';
-      setTimeout(() => { aiStatus.textContent = 'AI: Scene Optimal'; }, 1500);
+        errorMsg.textContent = 'Error: ' + err.name + ' - ' + err.message;
+      });
     }
 
-    startCamBtn.addEventListener('click', startCamera);
+    startCamBtn.onclick = startCamera;
 
-    flipCamBtn.addEventListener('click', () => {
+    flipCamBtn.onclick = function() {
       useFrontCam = !useFrontCam;
       startCamera();
-    });
+    };
 
-    gridBtn.addEventListener('click', () => {
+    gridBtn.onclick = function() {
       gridOverlay.classList.toggle('hidden');
-      const isOn = !gridOverlay.classList.contains('hidden');
+      var isOn = !gridOverlay.classList.contains('hidden');
       gridBtn.textContent = isOn ? 'Grid: ON' : 'Grid: OFF';
       gridBtn.classList.toggle('active', isOn);
-    });
+    };
 
-    torchBtn.addEventListener('click', async () => {
-      if (!stream) return;
-      const track = stream.getVideoTracks().at(0);
-      const caps = track && track.getCapabilities ? track.getCapabilities() : {};
-      if (caps.torch) {
+    torchBtn.onclick = function() {
+      if (!stream) { alert('Aktifkan kamera dulu!'); return; }
+      var track = stream.getVideoTracks().shift();
+      if (track && track.getCapabilities && track.getCapabilities().torch) {
         torchOn = !torchOn;
-        await track.applyConstraints({ advanced: [{ torch: torchOn }] });
-        torchBtn.textContent = `Torch: ${torchOn ? 'ON' : 'OFF'}`;
+        track.applyConstraints({ advanced: [{ torch: torchOn }] });
+        torchBtn.textContent = torchOn ? 'Torch: ON' : 'Torch: OFF';
         torchBtn.classList.toggle('active', torchOn);
       } else {
-        alert('Perangkat ini tidak mendukung kontrol Torch lewat browser.');
+        alert('Torch tidak didukung di browser ini.');
       }
-    });
+    };
 
     function applyCameraEffects() {
-      const brightnessVal = 1 + (manualState.ev * 0.25) + ((manualState.iso - 100) / 6000);
-      const wbWarmth = (manualState.wb - 5500) / 10000;
-      const sepiaAmt = wbWarmth > 0 ? Math.min(wbWarmth, 0.4) : 0;
-      const hueAmt = wbWarmth < 0 ? wbWarmth * 40 : 0;
+      var brightnessVal = 1 + (manualState.ev * 0.25) + ((manualState.iso - 100) / 6000);
+      var wbWarmth = (manualState.wb - 5500) / 10000;
+      var sepiaAmt = wbWarmth > 0 ? Math.min(wbWarmth, 0.4) : 0;
+      var hueAmt = wbWarmth < 0 ? wbWarmth * 40 : 0;
 
-      const manualFilter = `brightness(${brightnessVal.toFixed(2)}) sepia(${sepiaAmt.toFixed(2)}) hue-rotate(${hueAmt.toFixed(0)}deg)`;
-      const combinedFilter = currentLutFilter === 'none' ? manualFilter : `${currentLutFilter} ${manualFilter}`;
-
-      video.style.filter = combinedFilter;
-      video.style.transform = `scale(${manualState.zoom})`;
-
-      if (stream) {
-        const track = stream.getVideoTracks().at(0);
-        const caps = track && track.getCapabilities ? track.getCapabilities() : {};
-        const adv = {};
-        if (caps.zoom) adv.zoom = Math.min(Math.max(manualState.zoom, caps.zoom.min), caps.zoom.max);
-        if (caps.exposureCompensation) {
-          adv.exposureCompensation = Math.min(Math.max(manualState.ev, caps.exposureCompensation.min), caps.exposureCompensation.max);
-        }
-        if (Object.keys(adv).length > 0) track.applyConstraints({ advanced: [adv] }).catch(() => {});
-      }
+      var manualFilter = 'brightness(' + brightnessVal.toFixed(2) + ') sepia(' + sepiaAmt.toFixed(2) + ') hue-rotate(' + hueAmt.toFixed(0) + 'deg)';
+      video.style.filter = currentLutFilter === 'none' ? manualFilter : (currentLutFilter + ' ' + manualFilter);
+      video.style.transform = 'scale(' + manualState.zoom + ')';
     }
 
     function bindLutButtons() {
-      document.querySelectorAll('.lut-btn').forEach(btn => {
-        btn.onclick = () => {
-          document.querySelectorAll('.lut-btn').forEach(b => b.classList.remove('active'));
+      var btns = document.querySelectorAll('.lut-btn');
+      btns.forEach(function(btn) {
+        btn.onclick = function() {
+          btns.forEach(function(b) { b.classList.remove('active'); });
           btn.classList.add('active');
-          currentLutFilter = btn.dataset.filter;
-          activeLutName.textContent = btn.dataset.name;
+          currentLutFilter = btn.getAttribute('data-filter');
+          activeLutName.textContent = btn.getAttribute('data-name');
           applyCameraEffects();
         };
       });
     }
     bindLutButtons();
 
-    document.getElementById('cubeInput').addEventListener('change', (e) => {
-      const file = e.target.files.item(0);
+    document.getElementById('cubeInput').onchange = function(e) {
+      var file = e.target.files.item(0);
       if (!file) return;
-      const reader = new FileReader();
-      reader.onload = (ev) => {
-        const lines = ev.target.result.split('\n');
-        let rSum = 0, gSum = 0, bSum = 0, count = 0;
-        for (const line of lines) {
-          const parts = line.trim().split(/\s+/);
-          if (parts.length === 3) {
-            const r = parseFloat(parts.at(0));
-            const g = parseFloat(parts.at(1));
-            const b = parseFloat(parts.at(2));
-            if (!isNaN(r) && !isNaN(g) && !isNaN(b)) {
-              rSum += r; gSum += g; bSum += b; count++;
-            }
-          }
-        }
-        const avgR = count ? rSum / count : 0.5;
-        const avgB = count ? bSum / count : 0.5;
-        const warmth = Math.max(0, (avgR - avgB) * 0.6);
-        const hue = (avgB - avgR) * 35;
-        const customFilter = `contrast(1.18) saturate(1.22) sepia(${warmth.toFixed(2)}) hue-rotate(${hue.toFixed(0)}deg)`;
-        const lutName = file.name.replace(/\.cube$/i, '').slice(0, 14);
-
-        const newBtn = document.createElement('button');
-        newBtn.className = 'lut-btn';
-        newBtn.dataset.name = lutName;
-        newBtn.dataset.filter = customFilter;
-        newBtn.textContent = lutName;
-        document.getElementById('lutList').appendChild(newBtn);
-        bindLutButtons();
-        newBtn.click();
-      };
-      reader.readAsText(file);
-    });
-
-    document.getElementById('aiAutoLutBtn').addEventListener('click', () => {
-      aiStatus.textContent = 'AI: Menganalisis Scene...';
-      setTimeout(() => {
-        const btns = Array.from(document.querySelectorAll('.lut-btn')).slice(1);
-        const pick = btns.at(Math.floor(Math.random() * btns.length));
-        if (pick) {
-          pick.click();
-          aiStatus.textContent = `AI: Rekomendasi ${pick.dataset.name}`;
-        }
-      }, 600);
-    });
-
-    document.getElementById('copyPresetBtn').addEventListener('click', () => {
-      const presetText = `Pro AI Camera Preset | LUT: ${activeLutName.textContent} | EV: ${manualState.ev} | ISO: ${manualState.iso} | Shutter: 1/${manualState.shutter} | WB: ${manualState.wb}K | Zoom: ${manualState.zoom}x`;
-      navigator.clipboard.writeText(presetText).then(() => {
-        alert('Preset disalin ke clipboard:\n' + presetText);
-      });
-    });
-
-    const slider = document.getElementById('manualSlider');
-    const sliderValueText = document.getElementById('sliderValueText');
-    const paramConfigs = {
-      ev:      { min: -2,   max: 2,    step: 0.1, format: v => `${v > 0 ? '+' : ''}${parseFloat(v).toFixed(1)} EV`, lbl: 'lbl-ev' },
-      iso:     { min: 100,  max: 3200, step: 100, format: v => `${v}`, lbl: 'lbl-iso' },
-      shutter: { min: 15,   max: 1000, step: 15,  format: v => `1/${v}s`, lbl: 'lbl-shutter' },
-      wb:      { min: 2800, max: 8000, step: 100, format: v => `${v}K`, lbl: 'lbl-wb' },
-      zoom:    { min: 1,    max: 4,    step: 0.1, format: v => `${parseFloat(v).toFixed(1)}x`, lbl: 'lbl-zoom' }
+      var lutName = file.name.replace(/\.cube$/i, '').slice(0, 14);
+      var newBtn = document.createElement('button');
+      newBtn.type = 'button';
+      newBtn.className = 'lut-btn';
+      newBtn.setAttribute('data-name', lutName);
+      newBtn.setAttribute('data-filter', 'contrast(1.2) saturate(1.25) sepia(0.12)');
+      newBtn.textContent = lutName;
+      document.getElementById('lutList').appendChild(newBtn);
+      bindLutButtons();
+      newBtn.click();
     };
 
-    document.querySelectorAll('.m-tab').forEach(tab => {
-      tab.addEventListener('click', () => {
-        document.querySelectorAll('.m-tab').forEach(t => t.classList.remove('active'));
+    document.getElementById('aiAutoLutBtn').onclick = function() {
+      aiStatus.textContent = 'AI: Menganalisis...';
+      setTimeout(function() {
+        var btns = document.querySelectorAll('.lut-btn');
+        var idx = Math.floor(Math.random() * (btns.length - 1)) + 1;
+        btns.item(idx).click();
+        aiStatus.textContent = 'AI: ' + btns.item(idx).getAttribute('data-name');
+      }, 500);
+    };
+
+    document.getElementById('copyPresetBtn').onclick = function() {
+      var txt = 'Preset: ' + activeLutName.textContent + ' | EV:' + manualState.ev + ' | ISO:' + manualState.iso + ' | WB:' + manualState.wb + 'K';
+      if (navigator.clipboard) {
+        navigator.clipboard.writeText(txt);
+      }
+      alert('Disalin:\n' + txt);
+    };
+
+    var slider = document.getElementById('manualSlider');
+    var sliderValueText = document.getElementById('sliderValueText');
+    var paramConfigs = {
+      ev:      { min: -2,   max: 2,    step: 0.1, unit: ' EV', lbl: 'lbl-ev' },
+      iso:     { min: 100,  max: 3200, step: 100, unit: '',    lbl: 'lbl-iso' },
+      shutter: { min: 15,   max: 1000, step: 15,  unit: 's',   lbl: 'lbl-shutter' },
+      wb:      { min: 2800, max: 8000, step: 100, unit: 'K',   lbl: 'lbl-wb' },
+      zoom:    { min: 1,    max: 4,    step: 0.1, unit: 'x',   lbl: 'lbl-zoom' }
+    };
+
+    var tabs = document.querySelectorAll('.m-tab');
+    tabs.forEach(function(tab) {
+      tab.onclick = function() {
+        tabs.forEach(function(t) { t.classList.remove('active'); });
         tab.classList.add('active');
-        activeParam = tab.dataset.param;
-        const cfg = paramConfigs[activeParam];
-        slider.min = cfg.min; slider.max = cfg.max; slider.step = cfg.step;
+        activeParam = tab.getAttribute('data-param');
+        var cfg = paramConfigs[activeParam];
+        slider.min = cfg.min;
+        slider.max = cfg.max;
+        slider.step = cfg.step;
         slider.value = manualState[activeParam];
-        sliderValueText.textContent = cfg.format(manualState[activeParam]);
-      });
+        sliderValueText.textContent = (activeParam === 'shutter' ? '1/' : '') + manualState[activeParam] + cfg.unit;
+      };
     });
 
-    slider.addEventListener('input', () => {
-      const val = parseFloat(slider.value);
+    slider.oninput = function() {
+      var val = parseFloat(slider.value);
       manualState[activeParam] = val;
-      const cfg = paramConfigs[activeParam];
-      const formatted = cfg.format(val);
-      sliderValueText.textContent = formatted;
-      document.getElementById(cfg.lbl).textContent = formatted.replace(' EV', '');
+      var cfg = paramConfigs[activeParam];
+      var text = (activeParam === 'shutter' ? '1/' : '') + val + cfg.unit;
+      sliderValueText.textContent = text;
+      document.getElementById(cfg.lbl).textContent = text.replace(' EV', '');
       applyCameraEffects();
-    });
+    };
 
-                             
+    document.getElementById('resetManualBtn').onclick = function() {
+      manualState = { ev: 0, iso: 100, shutter: 60, wb: 5500, zoom: 1.0 };
+      document.getElementById('lbl-ev').textContent = '0.0';
+      document.getElementById('lbl-iso').textContent = 'AUTO';
+      document.getElementById('lbl-shutter').textContent = '1/60';
+      document.getElementById('lbl-wb').textContent = '5500K';
+      document.getElementById('lbl-zoom').textContent = '1.0x';
+      slider.value = manualState[activeParam];
+      sliderValueText.textContent = manualState[activeParam] + paramConfigs[activeParam].unit;
+      applyCameraEffects();
+    };
+
+    captureBtn.onclick = function() {
+      if (!stream) {
+        alert('Ketuk tombol "Ketuk untuk Aktifkan Kamera" terlebih dahulu!');
+        return;
+      }
+      canvas.width = video.videoWidth || 1280;
+      canvas.height = video.videoHeight || 720;
+      var ctx = canvas.getContext('2d');
+      ctx.filter = video.style.filter || 'none';
+
+      var z = manualState.zoom;
+      var sw = canvas.width / z;
+      var sh = canvas.height / z;
+      var sx = (canvas.width - sw) / 2;
+      var sy = (canvas.height - sh) / 2;
+
+      if (useFrontCam) {
+        ctx.translate(canvas.width, 0);
+        ctx.scale(-1, 1);
+      }
+      ctx.drawImage(video, sx, sy, sw, sh, 0, 0, canvas.width, canvas.height);
+
+      capturedPhotos.unshift(canvas.toDataURL('image/jpeg', 0.92));
+      updateGalleryPreview();
+    };
+
+    function updateGalleryPreview() {
+      var thumb = document.getElementById('lastPhotoThumb');
+      var count = document.getElementById('photoCount');
+      var emptyTxt = document.getElementById('emptyGalleryText');
+
+      if (capturedPhotos.length > 0) {
+        thumb.src = capturedPhotos.slice(0, 1).pop();
+        thumb.style.display = 'block';
+        count.textContent = capturedPhotos.length;
+        count.style.display = 'block';
+        emptyTxt.style.display = 'none';
+      } else {
+        thumb.style.display = 'none';
+        count.style.display = 'none';
+        emptyTxt.style.display = 'block';
+      }
+    }
+
+    var galleryModal = document.getElementById('galleryModal');
+    var modalMainImage = document.getElementById('modalMainImage');
+    var thumbStrip = document.getElementById('thumbStrip');
+
+    document.getElementById('openGalleryBtn').onclick = function() {
+      if (capturedPhotos.length === 0) { alert('Belum ada foto.'); return; }
+      selectedPhotoIndex = 0;
+      renderModalGallery();
+      galleryModal.classList.add('open');
+    };
+
+    document.getElementById('closeGalleryBtn').onclick = function() {
+      galleryModal.classList.remove('open');
+    };
+
+    function renderModalGallery() {
+      if (capturedPhotos.length === 0) {
+        galleryModal.classList.remove('open');
+        updateGalleryPreview();
+        return;
+      }
+                
+  
+                                                                                
