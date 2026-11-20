@@ -3,16 +3,18 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>WinaCamera</title>
+  <meta name="theme-color" content="#000000">
+  <title>WinaCamera Pro</title>
   <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; font-family: sans-serif; }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: sans-serif; -webkit-tap-highlight-color: transparent; }
     html, body { background: #000; color: #fff; overflow: hidden; height: 100dvh; width: 100vw; }
     #viewfinder { position: relative; width: 100%; height: 100%; }
-    video { width: 100%; height: 100%; object-fit: cover; }
+    video { width: 100%; height: 100%; object-fit: cover; transition: filter 0.15s ease; }
     canvas { display: none; }
 
+    /* Overlay Mulai */
     #overlay {
-      position: absolute; inset: 0; z-index: 50; background: rgba(0,0,0,0.88);
+      position: absolute; inset: 0; z-index: 60; background: rgba(0,0,0,0.9);
       display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 15px; padding: 20px; text-align: center;
     }
     .btn-mulai {
@@ -21,44 +23,83 @@
     }
     #status-txt { color: #ffd166; font-size: 13px; max-width: 300px; }
 
+    /* HUD Atas */
     .hud-top {
-      position: absolute; top: 10px; left: 10px; right: 10px; z-index: 20;
-      display: flex; flex-direction: column; gap: 6px;
+      position: absolute; top: 10px; left: 10px; right: 10px; z-index: 25;
+      display: flex; flex-direction: column; gap: 8px;
     }
-    .hud-row { display: flex; justify-content: space-between; align-items: center; }
+    .hud-row { display: flex; justify-content: space-between; align-items: center; gap: 6px; }
     .badge {
       background: rgba(0,0,0,0.7); padding: 6px 10px; border-radius: 8px;
-      border: 1px solid rgba(255,255,255,0.25); font-size: 11px; display: flex; align-items: center; gap: 8px;
+      border: 1px solid rgba(255,255,255,0.25); font-size: 11px; display: flex; align-items: center; gap: 6px;
     }
-    .btn-kecil {
+    .btn-top {
       background: rgba(0,0,0,0.75); border: 1px solid rgba(255,255,255,0.3);
-      color: #fff; border-radius: 8px; padding: 6px 10px; font-size: 11px; font-weight: bold;
+      color: #fff; border-radius: 8px; padding: 6px 9px; font-size: 11px; font-weight: bold; cursor: pointer;
     }
-    .btn-biru { background: #00a8ff; border: none; color: #fff; border-radius: 5px; padding: 4px 8px; font-size: 11px; font-weight: bold; }
+    .btn-top.active { background: #00a8ff; border-color: #00a8ff; color: #fff; }
+    .btn-hdr.active { background: #ff9f1c; border-color: #ff9f1c; color: #000; }
+    .btn-biru { background: #00a8ff; border: none; color: #fff; border-radius: 5px; padding: 4px 8px; font-size: 11px; font-weight: bold; cursor: pointer; }
 
+    /* Grid & Timer */
     .grid {
       position: absolute; inset: 0; pointer-events: none; z-index: 10;
       background-image: linear-gradient(to right, rgba(255,255,255,0.25) 1px, transparent 1px),
                         linear-gradient(to bottom, rgba(255,255,255,0.25) 1px, transparent 1px);
       background-size: 33.33% 33.33%;
     }
+    #timer-display {
+      position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+      font-size: 80px; font-weight: bold; color: #fff; text-shadow: 0 0 20px #000;
+      z-index: 45; display: none; pointer-events: none;
+    }
+    #flash-fx {
+      position: absolute; inset: 0; background: #fff; z-index: 55; opacity: 0; pointer-events: none; transition: opacity 0.15s;
+    }
 
+    /* Panel Drawer (Manual Pro & Pengaturan) */
+    .panel-box {
+      position: absolute; bottom: 155px; left: 12px; right: 12px; z-index: 40;
+      background: rgba(18, 18, 18, 0.92); border: 1px solid rgba(255,255,255,0.25);
+      border-radius: 14px; padding: 14px; display: none; flex-direction: column; gap: 10px;
+      backdrop-filter: blur(8px);
+    }
+    .panel-title { font-size: 12px; font-weight: bold; color: #00a8ff; display: flex; justify-content: space-between; }
+    .slider-row { display: flex; flex-direction: column; gap: 4px; font-size: 11px; }
+    .slider-head { display: flex; justify-content: space-between; color: #ddd; }
+    input[type=range] { width: 100%; accent-color: #00a8ff; }
+    .opt-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .opt-btn {
+      background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.2);
+      color: #fff; padding: 8px; border-radius: 8px; font-size: 11px; text-align: center; cursor: pointer;
+    }
+    .opt-btn.active { background: #00a8ff; border-color: #00a8ff; font-weight: bold; }
+
+    /* Kontrol Bawah */
     .bawah {
       position: absolute; bottom: 0; left: 0; right: 0; z-index: 30;
-      background: linear-gradient(transparent, rgba(0,0,0,0.95));
-      padding: 12px 15px 25px 15px; display: flex; flex-direction: column; gap: 12px;
+      background: linear-gradient(transparent, rgba(0,0,0,0.96));
+      padding: 12px 14px 24px 14px; display: flex; flex-direction: column; gap: 12px;
     }
-    .lut-bar { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; }
+    .lut-bar { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; align-items: center; }
     .lut-bar::-webkit-scrollbar { display: none; }
     .lut-btn {
       background: rgba(35,35,35,0.9); color: #fff; border: 1px solid #555;
-      padding: 7px 13px; border-radius: 18px; font-size: 12px; white-space: nowrap;
+      padding: 7px 13px; border-radius: 18px; font-size: 12px; white-space: nowrap; cursor: pointer;
     }
     .lut-btn.active { background: #00a8ff; border-color: #00a8ff; font-weight: bold; }
 
-    .shutter-row { display: flex; justify-content: space-around; align-items: center; }
-    .shutter { width: 66px; height: 66px; border-radius: 50%; background: #fff; border: 4px solid #888; }
-    .side-btn { background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.25); color: #fff; padding: 10px 14px; border-radius: 10px; font-size: 12px; }
+    .shutter-row { display: flex; justify-content: space-between; align-items: center; padding: 0 6px; }
+    .shutter {
+      width: 66px; height: 66px; border-radius: 50%; background: #fff;
+      border: 4px solid #888; cursor: pointer; transition: transform 0.1s;
+    }
+    .shutter:active { transform: scale(0.92); }
+    .side-btn {
+      background: rgba(255,255,255,0.18); border: 1px solid rgba(255,255,255,0.25);
+      color: #fff; padding: 10px 12px; border-radius: 10px; font-size: 11px; font-weight: bold; cursor: pointer;
+    }
+    .side-btn.active { background: #00a8ff; border-color: #00a8ff; }
   </style>
 </head>
 <body>
@@ -67,131 +108,84 @@
     <video id="vid" autoplay playsinline muted></video>
     <canvas id="cvs"></canvas>
     <div class="grid" id="grid"></div>
+    <div id="timer-display">3</div>
+    <div id="flash-fx"></div>
 
     <div id="overlay">
       <button class="btn-mulai" onclick="bukaKamera()">Ketuk untuk Aktifkan Kamera</button>
-      <div id="status-txt">Tekan tombol biru di atas</div>
+      <div id="status-txt">Siap menyalakan kamera...</div>
     </div>
 
+    <!-- HUD Atas -->
     <div class="hud-top">
       <div class="hud-row">
         <div class="badge" id="info-res">RES: HD | LIVE</div>
-        <button class="btn-kecil" onclick="gantiKamera()">Flip Cam</button>
+        <div style="display:flex; gap:5px;">
+          <button class="btn-top btn-hdr" id="btn-hdr" onclick="toggleHDR()">HDR: OFF</button>
+          <button class="btn-top" id="btn-torch" onclick="toggleTorch()">Flash</button>
+          <button class="btn-top" onclick="gantiKamera()">Flip</button>
+        </div>
       </div>
       <div class="hud-row">
         <div class="badge">
           <span id="info-lut">LUT: ASLI</span>
           <button class="btn-biru" onclick="salinInfo()">Salin Preset</button>
         </div>
+        <button class="btn-top" id="btn-set" onclick="togglePanel('panel-set')">⚙️ Setelan</button>
       </div>
     </div>
 
+    <!-- Panel Manual Kamera Pro -->
+    <div class="panel-box" id="panel-pro">
+      <div class="panel-title">
+        <span>MANUAL KAMERA PRO</span>
+        <span style="color:#ffd166; cursor:pointer;" onclick="resetPro()">Reset</span>
+      </div>
+      <div class="slider-row">
+        <div class="slider-head"><span>Exposure / Kecerahan</span><span id="val-exp">100%</span></div>
+        <input type="range" id="sl-exp" min="50" max="160" value="100" oninput="updateFilter()">
+      </div>
+      <div class="slider-row">
+        <div class="slider-head"><span>Kontras</span><span id="val-con">100%</span></div>
+        <input type="range" id="sl-con" min="60" max="160" value="100" oninput="updateFilter()">
+      </div>
+      <div class="slider-row">
+        <div class="slider-head"><span>Saturasi Warna</span><span id="val-sat">100%</span></div>
+        <input type="range" id="sl-sat" min="0" max="180" value="100" oninput="updateFilter()">
+      </div>
+      <div class="slider-row">
+        <div class="slider-head"><span>Warmth (White Balance)</span><span id="val-warm">0%</span></div>
+        <input type="range" id="sl-warm" min="0" max="50" value="0" oninput="updateFilter()">
+      </div>
+    </div>
+
+    <!-- Panel Pengaturan Kamera -->
+    <div class="panel-box" id="panel-set">
+      <div class="panel-title">
+        <span>PENGATURAN KAMERA</span>
+        <span style="color:#ff6b6b; cursor:pointer;" onclick="togglePanel('panel-set')">Tutup ✕</span>
+      </div>
+      <div style="font-size:11px; color:#aaa;">Resolusi Video & Foto:</div>
+      <div class="opt-grid">
+        <button class="opt-btn active" id="res-hd" onclick="setResolusi('hd')">HD (720p)</button>
+        <button class="opt-btn" id="res-fhd" onclick="setResolusi('fhd')">Full HD (1080p)</button>
+      </div>
+      <div style="font-size:11px; color:#aaa; margin-top:4px;">Timer Jepret & Tampilan:</div>
+      <div class="opt-grid">
+        <button class="opt-btn" id="btn-timer" onclick="gantiTimer()">Timer: OFF</button>
+        <button class="opt-btn active" id="btn-grid" onclick="toggleGrid()">Grid 3x3: ON</button>
+        <button class="opt-btn" id="btn-mirror" onclick="toggleMirror()">Mirror: OFF</button>
+        <button class="opt-btn" onclick="instalPWA()">📲 Instal Aplikasi</button>
+      </div>
+    </div>
+
+    <!-- Kontrol Bawah -->
     <div class="bawah">
       <div class="lut-bar">
-        <button class="lut-btn active" onclick="pilihFilter(this, 'ASLI', 'none')">Asli</button>
+        <button class="lut-btn active" onclick="pilihFilter(this, 'ASLI', '')">Asli</button>
         <button class="lut-btn" onclick="pilihFilter(this, 'CANON G7X', 'contrast(1.08) saturate(1.22) sepia(0.16) brightness(1.05)')">Canon G7X</button>
         <button class="lut-btn" onclick="pilihFilter(this, 'IPHONE 14', 'contrast(1.06) saturate(1.15) brightness(1.03)')">iPhone 14</button>
         <button class="lut-btn" onclick="pilihFilter(this, 'WARM VINTAGE', 'contrast(1.12) saturate(1.18) sepia(0.28) brightness(1.02)')">Warm Vintage</button>
         <button class="lut-btn" onclick="pilihFilter(this, 'TEAL ORANGE', 'contrast(1.18) saturate(1.3) hue-rotate(-10deg)')">Teal & Orange</button>
         <button class="lut-btn" onclick="pilihFilter(this, 'CYBERPUNK', 'contrast(1.25) saturate(1.5) hue-rotate(25deg)')">Cyberpunk</button>
         <button class="lut-btn" onclick="pilihFilter(this, 'B&W NOIR', 'grayscale(1) contrast(1.35)')">B&W Noir</button>
-      </div>
-
-      <div class="shutter-row">
-        <button class="side-btn" onclick="toggleGrid(this)">Grid: ON</button>
-        <button class="shutter" onclick="ambilFoto()"></button>
-        <button class="side-btn" onclick="toggleMirror(this)">Mirror: OFF</button>
-      </div>
-    </div>
-  </div>
-
-  <script>
-    var arah = 'environment';
-    var streamAktif = null;
-    var filterAktif = 'none';
-    var cermin = false;
-
-    function bukaKamera() {
-      var st = document.getElementById('status-txt');
-      st.innerText = 'Meminta izin kamera ke HP...';
-
-      if (streamAktif) {
-        streamAktif.getTracks().forEach(function(t) { t.stop(); });
-      }
-
-      navigator.mediaDevices.getUserMedia({
-        video: { facingMode: arah },
-        audio: false
-      }).then(function(stream) {
-        streamAktif = stream;
-        var v = document.getElementById('vid');
-        v.srcObject = stream;
-        v.play();
-        document.getElementById('overlay').style.display = 'none';
-      }).catch(function(err) {
-        st.innerText = 'GAGAL: ' + err.name + ' - ' + err.message;
-        alert('Error Kamera: ' + err.name + ' - ' + err.message);
-      });
-    }
-
-    function gantiKamera() {
-      arah = (arah === 'environment') ? 'user' : 'environment';
-      cermin = (arah === 'user');
-      document.getElementById('vid').style.transform = cermin ? 'scaleX(-1)' : 'scaleX(1)';
-      bukaKamera();
-    }
-
-    function toggleMirror(btn) {
-      cermin = !cermin;
-      document.getElementById('vid').style.transform = cermin ? 'scaleX(-1)' : 'scaleX(1)';
-      btn.innerText = cermin ? 'Mirror: ON' : 'Mirror: OFF';
-    }
-
-    function pilihFilter(btn, nama, cssFilter) {
-      document.querySelectorAll('.lut-btn').forEach(function(b) { b.classList.remove('active'); });
-      btn.classList.add('active');
-      filterAktif = cssFilter;
-      document.getElementById('vid').style.filter = cssFilter;
-      document.getElementById('info-lut').innerText = 'LUT: ' + nama;
-    }
-
-    function toggleGrid(btn) {
-      var g = document.getElementById('grid');
-      var tampil = g.style.display === 'none';
-      g.style.display = tampil ? 'block' : 'none';
-      btn.innerText = tampil ? 'Grid: ON' : 'Grid: OFF';
-    }
-
-    function salinInfo() {
-      var teks = document.getElementById('info-lut').innerText;
-      var ta = document.createElement('textarea');
-      ta.value = teks;
-      document.body.appendChild(ta);
-      ta.select();
-      document.execCommand('copy');
-      document.body.removeChild(ta);
-      alert('Tersalin: ' + teks);
-    }
-
-    function ambilFoto() {
-      var v = document.getElementById('vid');
-      var c = document.getElementById('cvs');
-      c.width = v.videoWidth || 1280;
-      c.height = v.videoHeight || 720;
-      var ctx = c.getContext('2d');
-      ctx.save();
-      ctx.filter = filterAktif;
-      if (cermin) {
-        ctx.translate(c.width, 0);
-        ctx.scale(-1, 1);
-      }
-      ctx.drawImage(v, 0, 0, c.width, c.height);
-      ctx.restore();
-      var a = document.createElement('a');
-      a.download = 'WinaCam_' + Date.now() + '.jpg';
-      a.href = c.toDataURL('image/jpeg', 0.95);
-      a.click();
-    }
-  </script>
-</body>
-</html>
