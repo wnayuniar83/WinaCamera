@@ -3,13 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Pro AI Camera + LUT</title>
+  <title>WinaCamera Pro</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: sans-serif; }
     html, body { background: #000; color: #fff; overflow: hidden; height: 100dvh; width: 100vw; display: flex; flex-direction: column; }
     
     #viewfinder { position: relative; flex: 1; display: flex; justify-content: center; align-items: center; overflow: hidden; }
-    video { position: absolute; width: 1px; height: 1px; opacity: 0; }
+    video { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
     canvas { width: 100%; height: 100%; object-fit: cover; }
 
     #start-overlay {
@@ -91,25 +91,24 @@
     <canvas id="canvas"></canvas>
     <div class="grid-overlay" id="grid"></div>
 
-    <!-- Tombol Manual Aktifkan Kamera -->
     <div id="start-overlay">
-      <button class="start-cam-btn" onclick="startCamera()">📷 Ketuk untuk Aktifkan Kamera</button>
-      <div id="err-msg"></div>
+      <button class="start-cam-btn" id="btn-start">Ketuk untuk Aktifkan Kamera</button>
+      <div id="err-msg">Menyiapkan kamera...</div>
     </div>
 
     <div class="hud-top">
       <div class="hud-row">
         <div class="hud-badge" id="cam-info">RES: -- | FPS: --</div>
         <div style="display:flex; gap:6px;">
-          <button class="top-btn" id="torch-btn" onclick="toggleTorch()">Torch: OFF</button>
-          <button class="top-btn" onclick="flipCamera()">Flip Cam</button>
+          <button class="top-btn" id="torch-btn">Torch: OFF</button>
+          <button class="top-btn" id="flip-btn">Flip Cam</button>
         </div>
       </div>
 
       <div class="hud-row">
         <div class="hud-badge">
           <span id="lut-info">LUT: ASLI</span>
-          <button class="copy-btn" onclick="copyCameraPreset()">
+          <button class="copy-btn" id="copy-btn">
             <svg viewBox="0 0 24 24">
               <path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/>
             </svg>
@@ -122,23 +121,23 @@
     <div id="ai-status">AI: Menganalisis Scene...</div>
 
     <div class="controls-bottom">
-      <div class="lut-bar">
-        <button class="lut-btn active" onclick="setLUT('normal', this)">Asli</button>
-        <button class="lut-btn" onclick="setLUT('canon_g7x', this)">Canon G7X</button>
-        <button class="lut-btn" onclick="setLUT('iphone_14', this)">iPhone 14</button>
-        <button class="lut-btn" onclick="setLUT('warm_vintage', this)">Warm Vintage</button>
-        <button class="lut-btn" onclick="setLUT('teal_orange', this)">Teal & Orange</button>
-        <button class="lut-btn" onclick="setLUT('cyberpunk', this)">Cyberpunk</button>
-        <button class="lut-btn" onclick="setLUT('bw_contrast', this)">B&W Noir</button>
+      <div class="lut-bar" id="lut-bar">
+        <button class="lut-btn active" data-lut="normal">Asli</button>
+        <button class="lut-btn" data-lut="canon_g7x">Canon G7X</button>
+        <button class="lut-btn" data-lut="iphone_14">iPhone 14</button>
+        <button class="lut-btn" data-lut="warm_vintage">Warm Vintage</button>
+        <button class="lut-btn" data-lut="teal_orange">Teal & Orange</button>
+        <button class="lut-btn" data-lut="cyberpunk">Cyberpunk</button>
+        <button class="lut-btn" data-lut="bw_contrast">B&W Noir</button>
         <label class="lut-btn" style="border-style: dashed;">
           + Import .CUBE <input type="file" id="cube-input" accept=".cube" style="display:none;">
         </label>
       </div>
 
       <div class="shutter-row">
-        <button class="side-btn" onclick="toggleGrid(this)">Grid: ON</button>
+        <button class="side-btn" id="grid-btn">Grid: ON</button>
         <button class="shutter-btn" id="shutter"></button>
-        <button class="side-btn" id="ai-auto-btn" onclick="triggerAIScene()">AI Auto-LUT</button>
+        <button class="side-btn" id="ai-auto-btn">AI Auto-LUT</button>
       </div>
     </div>
   </div>
@@ -161,12 +160,12 @@
       errBox.innerText = 'Meminta izin kamera...';
 
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-        errBox.innerText = 'Error: Browser memblokir kamera karena bukan HTTPS/localhost aman. Pastikan alamat di chrome://flags sudah sama persis dengan port di atas (misal http://localhost:8158).';
+        errBox.innerText = 'Browser tidak mendukung akses kamera.';
         return;
       }
 
       if (currentStream) {
-        currentStream.getTracks().forEach(track => track.stop());
+        currentStream.getTracks().forEach(function(track) { track.stop(); });
       }
       torchOn = false;
       const torchBtn = document.getElementById('torch-btn');
@@ -193,35 +192,36 @@
       }
     }
 
-    window.addEventListener('load', () => { startCamera(); });
+    document.getElementById('btn-start').addEventListener('click', startCamera);
+    window.addEventListener('load', startCamera);
 
-    function flipCamera() {
+    document.getElementById('flip-btn').addEventListener('click', function() {
       facingMode = (facingMode === 'environment') ? 'user' : 'environment';
       startCamera();
-    }
+    });
 
-    function toggleTorch() {
+    document.getElementById('torch-btn').addEventListener('click', function() {
       if (!currentStream) return;
       const tracks = currentStream.getVideoTracks();
       if (!tracks || tracks.length === 0) return;
-      const track = tracks;
+      const track = tracks.item ? tracks.item(0) : tracks.at(0);
       const capabilities = track.getCapabilities ? track.getCapabilities() : {};
       if (!capabilities.torch) {
-        alert("Flash/Torch tidak didukung pada kamera atau browser ini.");
+        alert("Flash/Torch tidak didukung pada kamera ini.");
         return;
       }
       torchOn = !torchOn;
-      track.applyConstraints({ advanced: [{ torch: torchOn }] }).then(() => {
+      track.applyConstraints({ advanced: [{ torch: torchOn }] }).then(function() {
         const btn = document.getElementById('torch-btn');
         btn.innerText = torchOn ? 'Torch: ON' : 'Torch: OFF';
         btn.classList.toggle('active', torchOn);
-      }).catch(err => alert("Gagal menyalakan flash: " + err));
-    }
+      }).catch(function(err) { alert("Gagal menyalakan flash: " + err); });
+    });
 
-    function copyCameraPreset() {
+    document.getElementById('copy-btn').addEventListener('click', function() {
       const camInfo = document.getElementById('cam-info').innerText;
       const lutInfo = document.getElementById('lut-info').innerText;
-      const textToCopy = `[AI LUT CAMERA PRESET]\n${lutInfo}\n${camInfo}`;
+      const textToCopy = "[WinaCamera Preset]\n" + lutInfo + "\n" + camInfo;
       const textarea = document.createElement('textarea');
       textarea.value = textToCopy;
       document.body.appendChild(textarea);
@@ -230,8 +230,8 @@
       document.body.removeChild(textarea);
       const label = document.getElementById('copy-label');
       label.innerText = 'Tersalin!';
-      setTimeout(() => { label.innerText = 'Salin Preset'; }, 1500);
-    }
+      setTimeout(function() { label.innerText = 'Salin Preset'; }, 1500);
+    });
 
     function setLUT(lutName, btnElement) {
       currentLUT = lutName;
