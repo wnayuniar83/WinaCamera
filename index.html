@@ -17,9 +17,7 @@
     .btn-m {
       background: #00a8ff; color: #fff; border: none; padding: 18px 32px;
       border-radius: 12px; font-size: 16px; font-weight: bold;
-      touch-action: manipulation; -webkit-tap-highlight-color: transparent;
     }
-    .btn-m:active { background: #0077b6; }
     .top { position: absolute; top: 10px; left: 10px; right: 10px; z-index: 25; display: flex; flex-direction: column; gap: 8px; }
     .row { display: flex; justify-content: space-between; align-items: center; gap: 6px; }
     .bg { background: rgba(0,0,0,0.7); padding: 6px 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.25); font-size: 11px; display: flex; align-items: center; gap: 6px; }
@@ -55,7 +53,7 @@
 
     <div id="overlay">
       <button type="button" class="btn-m" id="btnCam">Ketuk untuk Aktifkan Kamera</button>
-      <div id="st" style="color:#ffd166;font-size:13px;max-width:300px;">Memeriksa sistem (v3)...</div>
+      <div id="st" style="color:#ffd166;font-size:13px;max-width:300px;">Memeriksa sistem (v4)...</div>
     </div>
 
     <div class="top">
@@ -112,11 +110,6 @@
   </div>
 
   <script>
-    window.onerror = function(msg, url, line) {
-      var st = document.getElementById('st');
-      if (st) st.innerText = 'JS Error (Baris ' + line + '): ' + msg;
-    };
-
     var dir = 'environment';
     var stm = null;
     var lCss = '';
@@ -126,9 +119,6 @@
     var tmr = 0;
     var rw = 1280;
     var rh = 720;
-
-    document.getElementById('st').innerText = 'Siap Buka Kamera (v3)';
-    document.getElementById('btnCam').onclick = startCam;
 
     function startCam() {
       var st = document.getElementById('st');
@@ -170,3 +160,17 @@
       rw = w; rh = h;
       document.getElementById('r720').classList.remove('on');
       document.getElementById('r1080').classList.remove('on');
+      document.getElementById(id).classList.add('on');
+      startCam();
+    }
+
+    function flipCam() {
+      dir = (dir === 'environment') ? 'user' : 'environment';
+      mir = (dir === 'user');
+      document.getElementById('vid').style.transform = mir ? 'scaleX(-1)' : 'scaleX(1)';
+      document.getElementById('bmir').innerText = mir ? 'Mirror: ON' : 'Mirror: OFF';
+      startCam();
+    }
+
+    function tglFlash() {
+      if (!stm) return;
