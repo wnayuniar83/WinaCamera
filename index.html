@@ -1,3 +1,112 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>WinaCam Pro</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: sans-serif; }
+    html, body { background: #000; color: #fff; overflow: hidden; height: 100dvh; width: 100vw; }
+    #view { position: relative; width: 100%; height: 100%; }
+    video { width: 100%; height: 100%; object-fit: cover; transition: filter 0.15s; }
+    canvas { display: none; }
+    #overlay {
+      position: absolute; inset: 0; z-index: 60; background: rgba(0,0,0,0.9);
+      display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 15px; padding: 20px; text-align: center;
+    }
+    .btn-m { background: #00a8ff; color: #fff; border: none; padding: 16px 28px; border-radius: 12px; font-size: 16px; font-weight: bold; }
+    .top { position: absolute; top: 10px; left: 10px; right: 10px; z-index: 25; display: flex; flex-direction: column; gap: 8px; }
+    .row { display: flex; justify-content: space-between; align-items: center; gap: 6px; }
+    .bg { background: rgba(0,0,0,0.7); padding: 6px 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.25); font-size: 11px; display: flex; align-items: center; gap: 6px; }
+    .bt { background: rgba(0,0,0,0.75); border: 1px solid rgba(255,255,255,0.3); color: #fff; border-radius: 8px; padding: 6px 9px; font-size: 11px; font-weight: bold; }
+    .bt.on { background: #00a8ff; border-color: #00a8ff; }
+    .hdr.on { background: #ff9f1c; border-color: #ff9f1c; color: #000; }
+    .bb { background: #00a8ff; border: none; color: #fff; border-radius: 5px; padding: 4px 8px; font-size: 11px; font-weight: bold; }
+    .grid { position: absolute; inset: 0; pointer-events: none; z-index: 10; background-image: linear-gradient(to right, rgba(255,255,255,0.25) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,0.25) 1px, transparent 1px); background-size: 33.33% 33.33%; }
+    .pnl { position: absolute; bottom: 155px; left: 12px; right: 12px; z-index: 40; background: rgba(18,18,18,0.95); border: 1px solid rgba(255,255,255,0.25); border-radius: 14px; padding: 14px; display: none; flex-direction: column; gap: 10px; }
+    .pt { font-size: 12px; font-weight: bold; color: #00a8ff; display: flex; justify-content: space-between; }
+    .sr { display: flex; flex-direction: column; gap: 3px; font-size: 11px; }
+    input[type=range] { width: 100%; accent-color: #00a8ff; }
+    .og { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .ob { background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.2); color: #fff; padding: 8px; border-radius: 8px; font-size: 11px; text-align: center; }
+    .ob.on { background: #00a8ff; border-color: #00a8ff; font-weight: bold; }
+    .bot { position: absolute; bottom: 0; left: 0; right: 0; z-index: 30; background: linear-gradient(transparent, rgba(0,0,0,0.96)); padding: 12px 14px 24px 14px; display: flex; flex-direction: column; gap: 12px; }
+    .lb { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; }
+    .lb::-webkit-scrollbar { display: none; }
+    .lbtn { background: rgba(35,35,35,0.9); color: #fff; border: 1px solid #555; padding: 7px 13px; border-radius: 18px; font-size: 12px; white-space: nowrap; }
+    .lbtn.on { background: #00a8ff; border-color: #00a8ff; font-weight: bold; }
+    .sh { display: flex; justify-content: space-between; align-items: center; padding: 0 6px; }
+    .sht { width: 66px; height: 66px; border-radius: 50%; background: #fff; border: 4px solid #888; }
+    .sb { background: rgba(255,255,255,0.18); border: 1px solid rgba(255,255,255,0.25); color: #fff; padding: 10px 12px; border-radius: 10px; font-size: 11px; font-weight: bold; }
+    .sb.on { background: #00a8ff; border-color: #00a8ff; }
+    #tm { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); font-size: 80px; font-weight: bold; z-index: 45; display: none; }
+  </style>
+</head>
+<body>
+  <div id="view">
+    <video id="vid" autoplay playsinline muted></video>
+    <canvas id="cvs"></canvas>
+    <div class="grid" id="grid"></div>
+    <div id="tm">3</div>
+
+    <div id="overlay">
+      <button class="btn-m" onclick="startCam()">Ketuk untuk Aktifkan Kamera</button>
+      <div id="st" style="color:#ffd166;font-size:13px;">Siap Buka Kamera</div>
+    </div>
+
+    <div class="top">
+      <div class="row">
+        <div class="bg" id="res">RES: HD | LIVE</div>
+        <div style="display:flex;gap:5px;">
+          <button class="bt hdr" id="bhdr" onclick="tglHDR()">HDR: OFF</button>
+          <button class="bt" id="bfl" onclick="tglFlash()">Flash</button>
+          <button class="bt" onclick="flipCam()">Flip</button>
+        </div>
+      </div>
+      <div class="row">
+        <div class="bg"><span id="ilut">LUT: ASLI</span><button class="bb" onclick="copyP()">Salin Preset</button></div>
+        <button class="bt" id="bset" onclick="tglPnl('pset')">Setelan</button>
+      </div>
+    </div>
+
+    <div class="pnl" id="ppro">
+      <div class="pt"><span>MANUAL PRO</span><span style="color:#ffd166;" onclick="rstPro()">Reset</span></div>
+      <div class="sr"><span>Exposure</span><input type="range" id="exp" min="50" max="160" value="100" oninput="updF()"></div>
+      <div class="sr"><span>Kontras</span><input type="range" id="con" min="60" max="160" value="100" oninput="updF()"></div>
+      <div class="sr"><span>Saturasi</span><input type="range" id="sat" min="0" max="180" value="100" oninput="updF()"></div>
+      <div class="sr"><span>Warmth (WB)</span><input type="range" id="wrm" min="0" max="50" value="0" oninput="updF()"></div>
+    </div>
+
+    <div class="pnl" id="pset">
+      <div class="pt"><span>PENGATURAN</span><span style="color:#ff6b6b;" onclick="tglPnl('pset')">Tutup</span></div>
+      <div class="og">
+        <button class="ob on" id="r720" onclick="setR(1280,720,'r720')">HD 720p</button>
+        <button class="ob" id="r1080" onclick="setR(1920,1080,'r1080')">Full HD 1080p</button>
+        <button class="ob" id="btmr" onclick="tglTmr()">Timer: OFF</button>
+        <button class="ob on" id="bgrd" onclick="tglGrd()">Grid: ON</button>
+        <button class="ob" id="bmir" onclick="tglMir()">Mirror: OFF</button>
+        <button class="ob" onclick="alert('Ketuk titik 3 Chrome -> ikon Unduh (panah bawah) untuk simpan offline!')">Simpan Offline</button>
+      </div>
+    </div>
+
+    <div class="bot">
+      <div class="lb">
+        <button class="lbtn on" onclick="setL(this,'ASLI','')">Asli</button>
+        <button class="lbtn" onclick="setL(this,'CANON G7X','contrast(1.08) saturate(1.22) sepia(0.16) brightness(1.05)')">Canon G7X</button>
+        <button class="lbtn" onclick="setL(this,'IPHONE 14','contrast(1.06) saturate(1.15) brightness(1.03)')">iPhone 14</button>
+        <button class="lbtn" onclick="setL(this,'WARM VINTAGE','contrast(1.12) saturate(1.18) sepia(0.28) brightness(1.02)')">Warm Vintage</button>
+        <button class="lbtn" onclick="setL(this,'TEAL ORANGE','contrast(1.18) saturate(1.3) hue-rotate(-10deg)')">Teal & Orange</button>
+        <button class="lbtn" onclick="setL(this,'CYBERPUNK','contrast(1.25) saturate(1.5) hue-rotate(25deg)')">Cyberpunk</button>
+        <button class="lbtn" onclick="setL(this,'B&W NOIR','grayscale(1) contrast(1.35)')">B&W Noir</button>
+      </div>
+      <div class="sh">
+        <button class="sb" id="bpro" onclick="tglPnl('ppro')">Manual Pro</button>
+        <button class="sht" onclick="snap()"></button>
+        <label class="sb">Import LUT<input type="file" accept=".cube" style="display:none;" onchange="impL(this)"></label>
+      </div>
+    </div>
+  </div>
+
   <script>
     var dir = 'environment';
     var stm = null;
@@ -13,18 +122,12 @@
       var st = document.getElementById('st');
       st.innerText = 'Menghubungkan...';
       if (stm) {
-        stm.getTracks().forEach(function(t) {
-          t.stop();
-        });
+        stm.getTracks().forEach(function(t) { t.stop(); });
       }
       fl = false;
       document.getElementById('bfl').classList.remove('on');
       navigator.mediaDevices.getUserMedia({
-        video: {
-          facingMode: dir,
-          width: { ideal: rw },
-          height: { ideal: rh }
-        },
+        video: { facingMode: dir, width: { ideal: rw }, height: { ideal: rh } },
         audio: false
       }).then(function(s) {
         stm = s;
@@ -33,8 +136,7 @@
         v.play();
         document.getElementById('overlay').style.display = 'none';
         v.onloadedmetadata = function() {
-          var t = 'RES: ' + v.videoWidth + 'x' + v.videoHeight;
-          document.getElementById('res').innerText = t;
+          document.getElementById('res').innerText = 'RES: ' + v.videoWidth + 'x' + v.videoHeight;
         };
       }).catch(function(e) {
         st.innerText = 'Error: ' + e.name;
@@ -43,8 +145,7 @@
     }
 
     function setR(w, h, id) {
-      rw = w;
-      rh = h;
+      rw = w; rh = h;
       document.getElementById('r720').classList.remove('on');
       document.getElementById('r1080').classList.remove('on');
       document.getElementById(id).classList.add('on');
@@ -54,10 +155,8 @@
     function flipCam() {
       dir = (dir === 'environment') ? 'user' : 'environment';
       mir = (dir === 'user');
-      var v = document.getElementById('vid');
-      v.style.transform = mir ? 'scaleX(-1)' : 'scaleX(1)';
-      var bm = document.getElementById('bmir');
-      bm.innerText = mir ? 'Mirror: ON' : 'Mirror: OFF';
+      document.getElementById('vid').style.transform = mir ? 'scaleX(-1)' : 'scaleX(1)';
+      document.getElementById('bmir').innerText = mir ? 'Mirror: ON' : 'Mirror: OFF';
       startCam();
     }
 
@@ -69,9 +168,7 @@
         return;
       }
       fl = !fl;
-      tr.applyConstraints({
-        advanced: [{ torch: fl }]
-      }).then(function() {
+      tr.applyConstraints({ advanced: [{ torch: fl }] }).then(function() {
         document.getElementById('bfl').classList.toggle('on', fl);
       });
     }
@@ -80,141 +177,3 @@
       hdr = !hdr;
       var b = document.getElementById('bhdr');
       b.innerText = hdr ? 'HDR: ON' : 'HDR: OFF';
-      b.classList.toggle('on', hdr);
-      updF();
-    }
-
-    function tglPnl(id) {
-      var p1 = document.getElementById('ppro');
-      var p2 = document.getElementById('pset');
-      var tg = document.getElementById(id);
-      var op = tg.style.display === 'flex';
-      p1.style.display = 'none';
-      p2.style.display = 'none';
-      document.getElementById('bpro').classList.remove('on');
-      document.getElementById('bset').classList.remove('on');
-      if (!op) {
-        tg.style.display = 'flex';
-        var btnId = (id === 'ppro') ? 'bpro' : 'bset';
-        document.getElementById(btnId).classList.add('on');
-      }
-    }
-
-    function updF() {
-      var e = document.getElementById('exp').value / 100;
-      var c = document.getElementById('con').value / 100;
-      var s = document.getElementById('sat').value / 100;
-      var w = document.getElementById('wrm').value / 100;
-      var h = hdr ? 'contrast(1.16) saturate(1.18) brightness(1.06) ' : '';
-      var f = h + 'brightness(' + e + ') contrast(' + c + ') saturate(' + s + ') sepia(' + w + ') ' + lCss;
-      var res = f.trim() || 'none';
-      document.getElementById('vid').style.filter = res;
-      return res;
-    }
-
-    function rstPro() {
-      document.getElementById('exp').value = 100;
-      document.getElementById('con').value = 100;
-      document.getElementById('sat').value = 100;
-      document.getElementById('wrm').value = 0;
-      updF();
-    }
-
-    function setL(b, n, c) {
-      document.querySelectorAll('.lbtn').forEach(function(x) {
-        x.classList.remove('on');
-      });
-      if (b) b.classList.add('on');
-      lCss = c;
-      var lbl = 'LUT: ' + n + (hdr ? ' + HDR' : '');
-      document.getElementById('ilut').innerText = lbl;
-      updF();
-    }
-
-    function impL(i) {
-      var f = i.files.item(0);
-      if (!f) return;
-      var nm = f.name.replace('.cube', '').toUpperCase();
-      setL(null, nm, 'contrast(1.12) saturate(1.22) sepia(0.18)');
-      alert('LUT aktif: ' + nm);
-    }
-
-    function tglGrd() {
-      var g = document.getElementById('grid');
-      var b = document.getElementById('bgrd');
-      var sh = g.style.display === 'none';
-      g.style.display = sh ? 'block' : 'none';
-      b.innerText = sh ? 'Grid: ON' : 'Grid: OFF';
-      b.classList.toggle('on', sh);
-    }
-
-    function tglMir() {
-      mir = !mir;
-      var b = document.getElementById('bmir');
-      var v = document.getElementById('vid');
-      v.style.transform = mir ? 'scaleX(-1)' : 'scaleX(1)';
-      b.innerText = mir ? 'Mirror: ON' : 'Mirror: OFF';
-      b.classList.toggle('on', mir);
-    }
-
-    function tglTmr() {
-      tmr = (tmr === 0) ? 3 : (tmr === 3 ? 10 : 0);
-      var b = document.getElementById('btmr');
-      b.innerText = (tmr === 0) ? 'Timer: OFF' : 'Timer: ' + tmr + 's';
-      b.classList.toggle('on', tmr > 0);
-    }
-
-    function copyP() {
-      var t = document.getElementById('ilut').innerText;
-      var a = document.createElement('textarea');
-      a.value = t;
-      document.body.appendChild(a);
-      a.select();
-      document.execCommand('copy');
-      document.body.removeChild(a);
-      alert('Tersalin: ' + t);
-    }
-
-    function snap() {
-      if (tmr === 0) {
-        shoot();
-        return;
-      }
-      var s = tmr;
-      var d = document.getElementById('tm');
-      d.style.display = 'block';
-      d.innerText = s;
-      var iv = setInterval(function() {
-        s--;
-        if (s > 0) {
-          d.innerText = s;
-        } else {
-          clearInterval(iv);
-          d.style.display = 'none';
-          shoot();
-        }
-      }, 1000);
-    }
-
-    function shoot() {
-      var v = document.getElementById('vid');
-      var c = document.getElementById('cvs');
-      c.width = v.videoWidth || 1280;
-      c.height = v.videoHeight || 720;
-      var x = c.getContext('2d');
-      x.save();
-      x.filter = updF();
-      if (mir) {
-        x.translate(c.width, 0);
-        x.scale(-1, 1);
-      }
-      x.drawImage(v, 0, 0, c.width, c.height);
-      x.restore();
-      var a = document.createElement('a');
-      a.download = 'WinaCam_' + Date.now() + '.jpg';
-      a.href = c.toDataURL('image/jpeg', 0.95);
-      a.click();
-    }
-  </script>
-</body>
-</html>
